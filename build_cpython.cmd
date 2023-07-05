@@ -1,0 +1,1 @@
+external\cpython\PCbuild\build.bat -p x64 -c Release
