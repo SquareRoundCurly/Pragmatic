@@ -1,3 +1,4 @@
 [submodule "external/cpython"]
 	path = external/cpython
 	url = https://github.com/python/cpython
+	branch = 3.12
