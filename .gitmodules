@@ -1,0 +1,3 @@
+[submodule "external/cpython"]
+	path = external/cpython
+	url = https://github.com/python/cpython
