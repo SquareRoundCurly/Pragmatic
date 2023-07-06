@@ -8,12 +8,8 @@
 // auto_graph
 #include "instrument.hpp"
 
-
-
-int main()
+void TestPython()
 {
-	std::cout << "Hello world !" << std::endl;
-
 	Py_SetPythonHome(CONCAT(L, PYTHON_ROOT_DIR));
 	Py_Initialize();
 
@@ -36,7 +32,7 @@ int main()
 		PyObject *exc = PyErr_GetRaisedException();
 		PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
 		_PyErr_ChainExceptions1(exc);
-		return NULL;
+		return;
 	}
 	assert(substate != NULL);
 	auto r = PyRun_SimpleStringFlags("print('Hello')", &cflags);
@@ -45,6 +41,13 @@ int main()
 	PyThreadState_Swap(mainstate);
 
 	Py_Finalize();
+}
+
+int main()
+{
+	std::cout << "Hello world !" << std::endl;
+
+	TestPython();
 
 	return 0;
 }

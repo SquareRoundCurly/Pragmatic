@@ -5,6 +5,9 @@
             "label": "build",
             "type": "cmake",
             "command": "build",
+			"targets": [
+				"auto_graph"
+			],
 			"dependsOn":[
 				
 			],

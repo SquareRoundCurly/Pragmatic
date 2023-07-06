@@ -24,7 +24,6 @@ message(${PYTHON_LIB_FILE})
 add_custom_command(
 	OUTPUT ${PYTHON_LIB_FILE}
 	COMMAND ${PYTHON_ROOT_DIR}/PCbuild/build.bat -p x64 -c ${CMAKE_BUILD_TYPE}
-	COMMAND cmad /C copy ${PYTHON_BUILD_DIR}/* build/
 	COMMENT "Building CPython ..."
 	WORKING_DIRECTORY ${PYTHON_ROOT_DIR}
 	VERBATIM
@@ -32,6 +31,12 @@ add_custom_command(
 
 # CPython lib target
 add_custom_target(PYTHON_LIB DEPENDS ${PYTHON_LIB_FILE})
+
+add_custom_command(
+    TARGET PYTHON_LIB
+    POST_BUILD
+    COMMAND xcopy "\"${PYTHON_BUILD_DIR}/*\"" "\"${CMAKE_SOURCE_DIR}/build\""
+)
 
 # Add the executable target
 add_executable(${PROJECT_NAME})
