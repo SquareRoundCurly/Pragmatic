@@ -125,7 +125,7 @@ namespace SRC::Debug
 
 } // namespace SRC::Debug
 
-#define PROFILE 1
+#define PROFILE 0
 
 #if PROFILE
 	#define PROFILE_BEGIN_SESSION(name, path)	::SRC::Debug::Instrumentor::Get().BeginSession(name, path)

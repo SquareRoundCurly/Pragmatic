@@ -24,7 +24,8 @@ message(${PYTHON_LIB_FILE})
 add_custom_command(
 	OUTPUT ${PYTHON_LIB_FILE}
 	COMMAND ${PYTHON_ROOT_DIR}/PCbuild/build.bat -p x64 -c ${CMAKE_BUILD_TYPE}
-	COMMENT "Building Release CPython ..."
+	COMMAND cmad /C copy ${PYTHON_BUILD_DIR}/* build/
+	COMMENT "Building CPython ..."
 	WORKING_DIRECTORY ${PYTHON_ROOT_DIR}
 	VERBATIM
 )
@@ -39,12 +40,16 @@ add_executable(${PROJECT_NAME})
 file(GLOB_RECURSE SRC_FILES "${CMAKE_SOURCE_DIR}/auto_graph/*.cpp")
 target_sources(${PROJECT_NAME} PRIVATE ${SRC_FILES})
 
+# Defines
+target_compile_definitions(${PROJECT_NAME} PRIVATE PYTHON_ROOT_DIR="${PYTHON_ROOT_DIR}")
+
 # Include Python headers
 target_include_directories(${PROJECT_NAME} PRIVATE ${Python_INCLUDE_DIR})
 
 # Link with Python library
 add_dependencies(${PROJECT_NAME} PYTHON_LIB)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${PYTHON_LIB})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PYTHON_LIB} ${PYTHON_LIB_FILE})
+target_link_directories(${PROJECT_NAME} PRIVATE ${PYTHON_BUILD_DIR})
 
 # Set the C++ standard to C++20
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
