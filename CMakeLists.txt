@@ -14,17 +14,18 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 # Find Python dirs
-set(PYTHON_ROOT_DIR ${CMAKE_SOURCE_DIR}/external/cpython) # set this to the path to your Python installation
-set(Python_INCLUDE_DIR ${PYTHON_ROOT_DIR}/Include" "${PYTHON_ROOT_DIR}/PC)
-set(PYTHON_LIB_FILE ${PYTHON_ROOT_DIR}/PCBuild/amd64/python312${PYTHON_DEBUG_POSTFIX}.lib)
-
+set(PYTHON_ROOT_DIR    ${CMAKE_SOURCE_DIR}/external/cpython) # set this to the path to your Python installation
+set(Python_INCLUDE_DIR ${PYTHON_ROOT_DIR}/Include ${PYTHON_ROOT_DIR}/PC)
+set(PYTHON_BUILD_DIR   ${PYTHON_ROOT_DIR}/PCBuild/amd64)
+set(PYTHON_LIB_FILE    ${PYTHON_BUILD_DIR}/python312${PYTHON_DEBUG_POSTFIX}.lib)
 message(${PYTHON_LIB_FILE})
 
-# CPython build command
+# CPython build commands
 add_custom_command(
 	OUTPUT ${PYTHON_LIB_FILE}
 	COMMAND ${PYTHON_ROOT_DIR}/PCbuild/build.bat -p x64 -c ${CMAKE_BUILD_TYPE}
-	COMMENT "Builds CPython"
+	COMMENT "Building Release CPython ..."
+	WORKING_DIRECTORY ${PYTHON_ROOT_DIR}
 	VERBATIM
 )
 
@@ -43,7 +44,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${Python_INCLUDE_DIR})
 
 # Link with Python library
 add_dependencies(${PROJECT_NAME} PYTHON_LIB)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${PYTHON_LIB_FILE})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PYTHON_LIB})
 
 # Set the C++ standard to C++20
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)

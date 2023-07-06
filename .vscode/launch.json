@@ -16,7 +16,7 @@
             "name": "auto_graph",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Debug/auto_graph.exe",
+            "program": "${workspaceFolder}/build/auto_graph.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
