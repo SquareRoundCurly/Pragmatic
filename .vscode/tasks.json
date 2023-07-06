@@ -1,20 +1,12 @@
 {
     "version": "2.0.0",
     "tasks": [
-		{
-			"label": "configure",
-			"type": "cmake",
-			"command": "configure",
-			"options": {
-				"cwd": "${workspaceFolder}"
-			}
-		},
         {
             "label": "build",
             "type": "cmake",
             "command": "build",
 			"dependsOn":[
-				"configure"
+				
 			],
             "group": {
                 "kind": "build",

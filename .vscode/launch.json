@@ -23,7 +23,7 @@
             "environment": [],
             "console": "internalConsole",
             "preLaunchTask": "build",
-			"symbolSearchPath": "${workspaceFolder}/build/Debug"
+			"symbolSearchPath": "${workspaceFolder}/build;${workspaceFolder}/external/cpython/PCbuild/amd64"
         }
 	]
 }
