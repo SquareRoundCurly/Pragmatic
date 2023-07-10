@@ -4,6 +4,10 @@
 // Standard library
 #include <iostream>
 
+// External
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+
 // auto_graph
 #include "instrument.hpp"
 
@@ -65,12 +69,10 @@ namespace SRC::AG
 
 	PythonInterpreter::~PythonInterpreter()
 	{
+		isRunning = false;
+
 		// End subinterpreters
-		for (auto* substate : substates)
-		{
-			PyThreadState_Swap(substate);
-			Py_EndInterpreter(substate);
-		}
+		subinterpreters.clear();
 		
 		// End main interpreter
 		PyThreadState_Swap(mainstate);
@@ -79,7 +81,17 @@ namespace SRC::AG
 
 	void PythonInterpreter::CreateSubinterpreter()
 	{
-		PyThreadState* substate;
+		subinterpreters.emplace_back(std::make_unique<PythonSubinterpreter>(*this, subinterpreters.size()));
+	}
+
+	void PythonInterpreter::Run(int index, const std::string& script)
+	{
+		subinterpreters[index]->Run(script);
+	}
+
+	PythonSubinterpreter::PythonSubinterpreter(const PythonInterpreter& pythonInterpreter, const size_t index)
+	: pythonInterpreter(pythonInterpreter), index(index)
+	{
 		const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
 		
 		ReleaseGIL();
@@ -90,7 +102,7 @@ namespace SRC::AG
 			/* Since no new thread state was created, there is no exception to
 			propagate; raise a fresh one after swapping in the old thread
 			state. */
-			PyThreadState_Swap(mainstate);
+			PyThreadState_Swap(pythonInterpreter.mainstate);
 			_PyErr_SetFromPyStatus(status);
 			PyObject *exc = PyErr_GetRaisedException();
 			PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
@@ -100,16 +112,19 @@ namespace SRC::AG
 
 		assert(substate != NULL);
 
-		SetupGlobals(substate, (long)substates.size());
-
-		substates.push_back(substate);
+		SetupGlobals(substate, (long)index);
 	}
 
-	void PythonInterpreter::Run(int index)
+	PythonSubinterpreter::~PythonSubinterpreter()
+	{
+		PyThreadState_Swap(substate);
+		Py_EndInterpreter(substate);
+	}
+
+	void PythonSubinterpreter::Run(const std::string& script)
 	{
 		PyCompilerFlags cflags = {0};
-
-		PyThreadState_Swap(substates[index]);
-		auto r = PyRun_SimpleStringFlags("print(f'Hello {ID}')", &cflags);
+		PyThreadState_Swap(substate);
+		auto r = PyRun_SimpleStringFlags(script.c_str(), &cflags);
 	}
 }
