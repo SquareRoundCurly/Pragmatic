@@ -15,6 +15,37 @@ namespace SRC::AG
 		{
 			PyThreadState_Swap(NULL);
 		}
+
+		void SetupGlobals(PyThreadState* substate, long ID)
+		{
+			PyObject* main_module = nullptr;
+			PyObject* global_dict = nullptr;
+			PyObject* id = nullptr;
+
+			PyThreadState_Swap(substate);
+
+			main_module = PyImport_AddModule("__main__");
+			if (main_module == NULL) goto error;
+
+			global_dict = PyModule_GetDict(main_module);
+			if (global_dict == NULL) goto error;
+
+			id = PyLong_FromLong(ID);  // This is an int, not a long.
+			if (id == NULL) goto error;
+
+			// Set the integer as a global variable.
+			if (PyDict_SetItemString(global_dict, "ID", id) < 0) goto error;
+
+			// Decrease reference count for our integer object
+			Py_DECREF(id);
+			return;
+
+			error: // Handle error & clean up any Python objects we created.
+			Py_XDECREF(main_module);
+			Py_XDECREF(global_dict);
+			Py_XDECREF(id);
+			return;
+		}
 	} // Anonymous namespace
 
 	PythonInterpreter::PythonInterpreter()
@@ -48,10 +79,10 @@ namespace SRC::AG
 
 	void PythonInterpreter::CreateSubinterpreter()
 	{
-		ReleaseGIL();
-
 		PyThreadState* substate;
 		const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
+		
+		ReleaseGIL();
 
 		PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
 		if (PyStatus_Exception(status))
@@ -69,37 +100,7 @@ namespace SRC::AG
 
 		assert(substate != NULL);
 
-		// Get the main module.
-		PyObject* main_module = PyImport_AddModule("__main__");
-		if (main_module == NULL)
-		{
-			// Handle error...
-			return;
-		}
-
-		// Get the dictionary that represents the module's global variables.
-		PyObject* global_dict = PyModule_GetDict(main_module);
-		if (global_dict == NULL)
-		{
-			// Handle error...
-			return;
-		}
-
-		// Create an integer object.
-		PyObject* id = PyLong_FromLong((long)substates.size());  // This is an int, not a long.
-		if (id == NULL) {
-			// Handle error...
-			return;
-		}
-
-		// Set the integer as a global variable.
-		if (PyDict_SetItemString(global_dict, "ID", id) < 0) {
-			// Handle error...
-			return;
-		}
-
-		// Decrease reference count for our integer object
-		Py_DECREF(id);
+		SetupGlobals(substate, (long)substates.size());
 
 		substates.push_back(substate);
 	}
