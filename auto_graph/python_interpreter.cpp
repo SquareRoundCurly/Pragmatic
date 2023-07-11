@@ -15,6 +15,133 @@ namespace SRC::AG
 {
 	namespace
 	{
+		// template<typename T, typename GetFunc, typename RestoreFunc>
+		// class ScopeGuard
+		// {
+		// 	public:
+		// 	 ScopeGuard() { stored = GetFunc(); }
+		// 	~ScopeGuard() { RestoreFunc(stored); }
+
+		// 	private:
+		// 	T* stored;
+		// };
+		// using PythonThreadScopeGuard = ScopeGuard<PyThreadState, PyEval_SaveThread, PyEval_RestoreThread>;
+
+		struct PythonInitialize
+		{
+			PythonInitialize()
+			{
+				PyConfig config;
+				PyConfig_InitPythonConfig(&config);
+				config.isolated = 1;
+				config.home = const_cast<wchar_t*>(CONCAT(L, PYTHON_ROOT_DIR));
+
+				Py_InitializeFromConfig(&config);
+				// PyConfig_Clear(&config);
+			}
+			~PythonInitialize() { Py_Finalize(); }
+		};
+
+		class PythonThreadScopeGuard
+		{			
+			public:
+			 PythonThreadScopeGuard() { state = PyEval_SaveThread(); }
+			~PythonThreadScopeGuard() { PyEval_RestoreThread(state); }
+
+			private:
+			PyThreadState* state;
+		};
+
+		class PythonThreadStateScopeGuard
+		{
+			public:
+			 PythonThreadStateScopeGuard() { threadState = PyThreadState_Get(); }
+			~PythonThreadStateScopeGuard() { PyThreadState_Swap(threadState); }
+
+			private:
+			PyThreadState* threadState;
+		};
+
+		class PythonSwapStateScopeGuard
+		{
+			public:
+			 PythonSwapStateScopeGuard(PyThreadState* ts) { threadState = PyThreadState_Swap(ts); }
+			~PythonSwapStateScopeGuard()                  { PyThreadState_Swap(threadState); }
+
+			private:
+			PyThreadState* threadState;
+		};
+
+		class PythonThreadState
+		{
+			public:
+			PythonThreadState(PyInterpreterState* interp)
+			{
+				threadState = PyThreadState_New(interp);
+				PyEval_RestoreThread(threadState);
+			}
+
+			~PythonThreadState()
+			{
+				PyThreadState_Clear(threadState);
+				PyThreadState_DeleteCurrent();
+			}
+
+			operator PyThreadState*() { return threadState; }
+			static PyThreadState* Current() { return PyThreadState_Get(); }
+
+			private:
+			PyThreadState* threadState;
+		};
+
+		class sub_interpreter
+		{
+			public:
+			struct thread_scope
+			{
+				thread_scope(PyInterpreterState* interp) : threadState(interp) { }
+				PythonThreadState threadState;
+				PythonSwapStateScopeGuard swap { threadState };
+			};
+
+			public:
+			sub_interpreter()
+			{
+				PythonThreadStateScopeGuard restore;
+				threadState = Py_NewInterpreter();
+			}
+
+			~sub_interpreter()
+			{
+				if(threadState)
+				{
+					PythonSwapStateScopeGuard sts(threadState);
+					Py_EndInterpreter(threadState);
+				}
+			}
+
+			PyInterpreterState* interp() { return threadState->interp; }
+			static PyInterpreterState* current() { return PythonThreadState::Current()->interp; }
+
+			private:
+			PyThreadState* threadState;
+		};
+
+		void f(PyInterpreterState* interp, const char* tname)
+		{
+			std::string code = R"PY(
+from __future__ import print_function
+import sys
+
+print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
+			)PY";
+
+			code.replace(code.find("TNAME"), 5, tname);
+
+			sub_interpreter::thread_scope scope(interp);
+			PyRun_SimpleString(code.c_str());
+		}
+
 		void ReleaseGIL()
 		{
 			PyThreadState_Swap(NULL);
@@ -52,79 +179,111 @@ namespace SRC::AG
 		}
 	} // Anonymous namespace
 
-	PythonInterpreter::PythonInterpreter()
+	void Test()
 	{
-		PyConfig config;
-		PyConfig_InitPythonConfig(&config);
-		config.home = const_cast<wchar_t*>(CONCAT(L, PYTHON_ROOT_DIR));
+		PythonInitialize init;
 
-		auto status = Py_InitializeFromConfig(&config);
-		if (PyStatus_Exception(status))
-		{
-			std::cout << "Couldn't initialize Python" << std::endl;
-		}
+		sub_interpreter s1;
+		sub_interpreter s2;
 
-		mainstate = PyThreadState_Get();
-	}
+    	PyRun_SimpleString(R"PY(
+# set sys.xxx, it will only be reflected in t4, which runs in the context of the main interpreter
 
-	PythonInterpreter::~PythonInterpreter()
-	{
-		isRunning = false;
+from __future__ import print_function
+import sys
 
-		// End subinterpreters
-		subinterpreters.clear();
+sys.xxx = ['abc']
+print('main: setting sys.xxx={}'.format(sys.xxx))
+		)PY");
+
+		std::thread t1{f, s1.interp(), "t1(s1)"};
+		std::thread t2{f, s2.interp(), "t2(s2)"};
+		std::thread t3{f, s1.interp(), "t3(s1)"};
+		std::thread t4{f, sub_interpreter::current(), "t4(main)"};
+
+		PythonThreadScopeGuard t;
+
+		t1.join();
+		t2.join();
+		t3.join();
+		t4.join();
 		
-		// End main interpreter
-		PyThreadState_Swap(mainstate);
-		Py_Finalize();
+		return;
 	}
 
-	void PythonInterpreter::CreateSubinterpreter()
-	{
-		subinterpreters.emplace_back(std::make_unique<PythonSubinterpreter>(*this, subinterpreters.size()));
-	}
+	// PythonInterpreter::PythonInterpreter()
+	// {
+	// 	PyConfig config;
+	// 	PyConfig_InitPythonConfig(&config);
+	// 	config.home = const_cast<wchar_t*>(CONCAT(L, PYTHON_ROOT_DIR));
 
-	void PythonInterpreter::Run(int index, const std::string& script)
-	{
-		subinterpreters[index]->Run(script);
-	}
+	// 	auto status = Py_InitializeFromConfig(&config);
+	// 	if (PyStatus_Exception(status))
+	// 	{
+	// 		std::cout << "Couldn't initialize Python" << std::endl;
+	// 	}
 
-	PythonSubinterpreter::PythonSubinterpreter(const PythonInterpreter& pythonInterpreter, const size_t index)
-	: pythonInterpreter(pythonInterpreter), index(index)
-	{
-		const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
+	// 	mainstate = PyThreadState_Get();
+	// }
+
+	// PythonInterpreter::~PythonInterpreter()
+	// {
+	// 	isRunning = false;
+
+	// 	// End subinterpreters
+	// 	subinterpreters.clear();
 		
-		ReleaseGIL();
+	// 	// End main interpreter
+	// 	PyThreadState_Swap(mainstate);
+	// 	Py_Finalize();
+	// }
 
-		PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
-		if (PyStatus_Exception(status))
-		{
-			/* Since no new thread state was created, there is no exception to
-			propagate; raise a fresh one after swapping in the old thread
-			state. */
-			PyThreadState_Swap(pythonInterpreter.mainstate);
-			_PyErr_SetFromPyStatus(status);
-			PyObject *exc = PyErr_GetRaisedException();
-			PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
-			_PyErr_ChainExceptions1(exc);
-			return;
-		}
+	// void PythonInterpreter::CreateSubinterpreter()
+	// {
+	// 	subinterpreters.emplace_back(std::make_unique<PythonSubinterpreter>(*this, subinterpreters.size()));
+	// }
 
-		assert(substate != NULL);
+	// void PythonInterpreter::Run(int index, const std::string& script)
+	// {
+	// 	subinterpreters[index]->Run(script);
+	// }
 
-		SetupGlobals(substate, (long)index);
-	}
+	// PythonSubinterpreter::PythonSubinterpreter(const PythonInterpreter& pythonInterpreter, const size_t index)
+	// : pythonInterpreter(pythonInterpreter), index(index)
+	// {
+	// 	const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
+		
+	// 	ReleaseGIL();
 
-	PythonSubinterpreter::~PythonSubinterpreter()
-	{
-		PyThreadState_Swap(substate);
-		Py_EndInterpreter(substate);
-	}
+	// 	PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
+	// 	if (PyStatus_Exception(status))
+	// 	{
+	// 		/* Since no new thread state was created, there is no exception to
+	// 		propagate; raise a fresh one after swapping in the old thread
+	// 		state. */
+	// 		PyThreadState_Swap(pythonInterpreter.mainstate);
+	// 		_PyErr_SetFromPyStatus(status);
+	// 		PyObject *exc = PyErr_GetRaisedException();
+	// 		PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
+	// 		_PyErr_ChainExceptions1(exc);
+	// 		return;
+	// 	}
 
-	void PythonSubinterpreter::Run(const std::string& script)
-	{
-		PyCompilerFlags cflags = {0};
-		PyThreadState_Swap(substate);
-		auto r = PyRun_SimpleStringFlags(script.c_str(), &cflags);
-	}
+	// 	assert(substate != NULL);
+
+	// 	SetupGlobals(substate, (long)index);
+	// }
+
+	// PythonSubinterpreter::~PythonSubinterpreter()
+	// {
+	// 	PyThreadState_Swap(substate);
+	// 	Py_EndInterpreter(substate);
+	// }
+
+	// void PythonSubinterpreter::Run(const std::string& script)
+	// {
+	// 	PyCompilerFlags cflags = {0};
+	// 	PyThreadState_Swap(substate);
+	// 	auto r = PyRun_SimpleStringFlags(script.c_str(), &cflags);
+	// }
 }
