@@ -22,6 +22,13 @@ namespace SRC::AG
 namespace SRC::AG
 {
 	void Test();
+
+	class PythonInterpreter
+	{
+		public:
+		 PythonInterpreter();
+		~PythonInterpreter();
+	};
 	// class PythonInterpreter
 	// {
 	// 	friend class PythonSubinterpreter;

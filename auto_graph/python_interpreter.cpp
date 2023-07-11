@@ -15,113 +15,112 @@ namespace SRC::AG
 {
 	namespace
 	{
-		// template<typename T, typename GetFunc, typename RestoreFunc>
-		// class ScopeGuard
-		// {
-		// 	public:
-		// 	 ScopeGuard() { stored = GetFunc(); }
-		// 	~ScopeGuard() { RestoreFunc(stored); }
-
-		// 	private:
-		// 	T* stored;
-		// };
-		// using PythonThreadScopeGuard = ScopeGuard<PyThreadState, PyEval_SaveThread, PyEval_RestoreThread>;
-
-		struct PythonInitialize
+		// Default handler concept, handlers restore states when out of scope
+		template<typename Handler>
+		concept HandlerConcept = requires(Handler handler, PyThreadState* state)
 		{
-			PythonInitialize()
-			{
-				PyConfig config;
-				PyConfig_InitPythonConfig(&config);
-				config.isolated = 1;
-				config.home = const_cast<wchar_t*>(CONCAT(L, PYTHON_ROOT_DIR));
-
-				Py_InitializeFromConfig(&config);
-				// PyConfig_Clear(&config);
-			}
-			~PythonInitialize() { Py_Finalize(); }
+			{ handler.Restore(state) } -> std::same_as<void>;
 		};
 
-		class PythonThreadScopeGuard
-		{			
-			public:
-			 PythonThreadScopeGuard() { state = PyEval_SaveThread(); }
-			~PythonThreadScopeGuard() { PyEval_RestoreThread(state); }
-
-			private:
-			PyThreadState* state;
+		// Has Store function		
+		template<typename Handler>
+		concept HandlerHasStoreConcept = HandlerConcept<Handler> && requires(Handler handler, PyThreadState* state)
+		{
+			{ handler.Store() } -> std::same_as<PyThreadState*>;
 		};
+		template <typename H>
+		using HasStore = std::enable_if_t<HandlerHasStoreConcept<H>, int>;
 
-		class PythonThreadStateScopeGuard
+		// Has Swap function
+		template<typename Handler>
+		concept HandlerHasSwapConcept = HandlerConcept<Handler> && requires(Handler handler, PyThreadState* state)
+		{
+			{ handler.Swap(state) } -> std::same_as<PyThreadState*>;
+		};
+		template <typename H>
+		using HasSwap = std::enable_if_t<HandlerHasSwapConcept<H>, int>;
+
+		// Has Create function
+		template<typename Handler>
+		concept HandlerHasCreateConcept = HandlerConcept<Handler> && requires(Handler handler, PyInterpreterState* interpreter)
+		{
+			{ handler.Create(interpreter) } -> std::same_as<PyThreadState*>;
+		};
+		template <typename H>
+		using HasCreate = std::enable_if_t<HandlerHasCreateConcept<H>, int>;
+
+		template<HandlerConcept Handler>
+		class ScopeGuard
 		{
 			public:
-			 PythonThreadStateScopeGuard() { threadState = PyThreadState_Get(); }
-			~PythonThreadStateScopeGuard() { PyThreadState_Swap(threadState); }
+			~ScopeGuard() { handler.Restore(state); }
+			 template<typename H = Handler, HasStore<H> = 0>
+			 ScopeGuard() { state = handler.Store(); }
+			 template<typename H = Handler, HasSwap<H> = 0>
+			 ScopeGuard(PyThreadState* state) { this->state = handler.Swap(state); }
+			 template<typename H = Handler, HasCreate<H> = 0>
+			 ScopeGuard(PyInterpreterState* interpreter) { this->state = handler.Create(interpreter); }
 
-			private:
-			PyThreadState* threadState;
-		};
-
-		class PythonSwapStateScopeGuard
-		{
 			public:
-			 PythonSwapStateScopeGuard(PyThreadState* ts) { threadState = PyThreadState_Swap(ts); }
-			~PythonSwapStateScopeGuard()                  { PyThreadState_Swap(threadState); }
-
-			private:
-			PyThreadState* threadState;
-		};
-
-		class PythonThreadState
-		{
-			public:
-			PythonThreadState(PyInterpreterState* interp)
-			{
-				threadState = PyThreadState_New(interp);
-				PyEval_RestoreThread(threadState);
-			}
-
-			~PythonThreadState()
-			{
-				PyThreadState_Clear(threadState);
-				PyThreadState_DeleteCurrent();
-			}
-
-			operator PyThreadState*() { return threadState; }
+			operator PyThreadState*() { return state; }
 			static PyThreadState* Current() { return PyThreadState_Get(); }
 
 			private:
-			PyThreadState* threadState;
+			PyThreadState* state;
+			Handler handler;
 		};
 
-		class sub_interpreter
+		struct PyThread
 		{
-			public:
-			struct thread_scope
-			{
-				thread_scope(PyInterpreterState* interp) : threadState(interp) { }
-				PythonThreadState threadState;
-				PythonSwapStateScopeGuard swap { threadState };
-			};
+			PyThreadState* Store()                       { return PyEval_SaveThread(); }
+			void           Restore(PyThreadState* state) { PyEval_RestoreThread(state); }
+		};
 
-			public:
-			sub_interpreter()
+		struct PyState
+		{
+			PyThreadState* Store()                       { return PyThreadState_Get(); }
+			PyThreadState* Swap(PyThreadState* state)    { return PyThreadState_Swap(state); }
+			void           Restore(PyThreadState* state) { PyThreadState_Swap(state); }
+		};
+
+		struct PyInterpreter
+		{
+			PyThreadState* Create(PyInterpreterState* interpreter)
 			{
-				PythonThreadStateScopeGuard restore;
-				threadState = Py_NewInterpreter();
+				auto state = PyThreadState_New(interpreter);
+				PyEval_RestoreThread(state);
+				return state;
 			}
 
-			~sub_interpreter()
+			void Restore(PyThreadState* state)
+			{
+				PyThreadState_Clear(state);
+				PyThreadState_DeleteCurrent();
+			}
+		};
+
+		class SubInterpreter
+		{
+			public:
+			SubInterpreter()
+			{
+				ScopeGuard<PyState> restore;
+
+				const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
+				auto status = Py_NewInterpreterFromConfig(&threadState, &config);
+			}
+
+			~SubInterpreter()
 			{
 				if(threadState)
 				{
-					PythonSwapStateScopeGuard sts(threadState);
+					ScopeGuard<PyState> swap { threadState };
 					Py_EndInterpreter(threadState);
 				}
 			}
 
 			PyInterpreterState* interp() { return threadState->interp; }
-			static PyInterpreterState* current() { return PythonThreadState::Current()->interp; }
+			static PyInterpreterState* current() { return ScopeGuard<PyInterpreter>::Current()->interp; }
 
 			private:
 			PyThreadState* threadState;
@@ -138,13 +137,9 @@ print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
 
 			code.replace(code.find("TNAME"), 5, tname);
 
-			sub_interpreter::thread_scope scope(interp);
+			ScopeGuard<PyInterpreter> interpreter { interp };
+			ScopeGuard<PyState> swap { interpreter };
 			PyRun_SimpleString(code.c_str());
-		}
-
-		void ReleaseGIL()
-		{
-			PyThreadState_Swap(NULL);
 		}
 
 		void SetupGlobals(PyThreadState* substate, long ID)
@@ -179,12 +174,28 @@ print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
 		}
 	} // Anonymous namespace
 
+	PythonInterpreter::PythonInterpreter()
+	{
+		PyConfig config;
+		PyConfig_InitPythonConfig(&config);
+		config.isolated = 1;
+		config.home = const_cast<wchar_t*>(CONCAT(L, PYTHON_ROOT_DIR));
+
+		Py_InitializeFromConfig(&config);
+		// PyConfig_Clear(&config);
+	}
+
+	PythonInterpreter::~PythonInterpreter()
+	{
+		Py_Finalize();
+	}
+
 	void Test()
 	{
-		PythonInitialize init;
+		PythonInterpreter interpreter;
 
-		sub_interpreter s1;
-		sub_interpreter s2;
+		SubInterpreter s1;
+		SubInterpreter s2;
 
     	PyRun_SimpleString(R"PY(
 # set sys.xxx, it will only be reflected in t4, which runs in the context of the main interpreter
@@ -199,15 +210,15 @@ print('main: setting sys.xxx={}'.format(sys.xxx))
 		std::thread t1{f, s1.interp(), "t1(s1)"};
 		std::thread t2{f, s2.interp(), "t2(s2)"};
 		std::thread t3{f, s1.interp(), "t3(s1)"};
-		std::thread t4{f, sub_interpreter::current(), "t4(main)"};
+		std::thread t4{f, SubInterpreter::current(), "t4(main)"};
 
-		PythonThreadScopeGuard t;
+		ScopeGuard<PyThread> guard;
 
 		t1.join();
 		t2.join();
 		t3.join();
 		t4.join();
-		
+
 		return;
 	}
 
