@@ -21,32 +21,33 @@ namespace SRC::AG
 
 namespace SRC::AG
 {
-	class PythonInterpreter
-	{
-		friend class PythonSubinterpreter;
+	void Test();
+	// class PythonInterpreter
+	// {
+	// 	friend class PythonSubinterpreter;
 
-		public:
-		PythonInterpreter();
-		~PythonInterpreter();
-		void CreateSubinterpreter();
-		void Run(int index, const std::string& script);
+	// 	public:
+	// 	PythonInterpreter();
+	// 	~PythonInterpreter();
+	// 	void CreateSubinterpreter();
+	// 	void Run(int index, const std::string& script);
 
-		private:
-		PyThreadState* mainstate;
-		std::vector<std::unique_ptr<PythonSubinterpreter>> subinterpreters;
-		std::atomic_bool isRunning = true;
-	};
+	// 	private:
+	// 	PyThreadState* mainstate;
+	// 	std::vector<std::unique_ptr<PythonSubinterpreter>> subinterpreters;
+	// 	std::atomic_bool isRunning = true;
+	// };
 
-	class PythonSubinterpreter
-	{
-		public:
-		PythonSubinterpreter(const PythonInterpreter& pythonInterpreter, const size_t index);
-		~PythonSubinterpreter();
-		void Run(const std::string& script);
+	// class PythonSubinterpreter
+	// {
+	// 	public:
+	// 	PythonSubinterpreter(const PythonInterpreter& pythonInterpreter, const size_t index);
+	// 	~PythonSubinterpreter();
+	// 	void Run(const std::string& script);
 
-		private:
-		const PythonInterpreter& pythonInterpreter;
-		const size_t index = -1;
-		PyThreadState* substate;
-	};
+	// 	private:
+	// 	const PythonInterpreter& pythonInterpreter;
+	// 	const size_t index = -1;
+	// 	PyThreadState* substate;
+	// };
 } // namespace SRC::AG
