@@ -28,6 +28,9 @@ namespace SRC::AG
 		public:
 		 PythonInterpreter();
 		~PythonInterpreter();
+
+		public:
+		std::thread Run(const int ID, std::string& code);
 	};
 	// class PythonInterpreter
 	// {

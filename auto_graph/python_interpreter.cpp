@@ -119,6 +119,19 @@ namespace SRC::AG
 				}
 			}
 
+			std::thread Run(const int ID, std::string& code)
+			{
+				return std::thread([this, ID, &code]()
+				{
+					auto script = std::string(code);
+					script.replace(code.find("TNAME"), 5, std::to_string(ID));
+
+					ScopeGuard<PyInterpreter> interpreter { threadState->interp };
+					ScopeGuard<PyState> swap { interpreter };
+					PyRun_SimpleString(script.c_str());
+				});
+			}
+
 			PyInterpreterState* interp() { return threadState->interp; }
 			static PyInterpreterState* current() { return ScopeGuard<PyInterpreter>::Current()->interp; }
 
@@ -190,6 +203,28 @@ print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
 		Py_Finalize();
 	}
 
+
+	std::thread PythonInterpreter::Run(const int ID, std::string& code)
+	{
+		auto* _interpreter = PyThreadState_Get()->interp;
+		return std::thread([this, ID, &code, _interpreter]()
+		{
+			auto script = std::string(code);
+			script.replace(code.find("TNAME"), 5, std::to_string(ID));
+
+			ScopeGuard<PyInterpreter> interpreter { _interpreter };
+			ScopeGuard<PyState> swap { interpreter };
+			PyRun_SimpleString(script.c_str());
+		});
+	}
+
+std::string code = R"PY(
+from __future__ import print_function
+import sys
+
+print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
+			)PY";
+
 	void Test()
 	{
 		PythonInterpreter interpreter;
@@ -207,10 +242,16 @@ sys.xxx = ['abc']
 print('main: setting sys.xxx={}'.format(sys.xxx))
 		)PY");
 
-		std::thread t1{f, s1.interp(), "t1(s1)"};
-		std::thread t2{f, s2.interp(), "t2(s2)"};
-		std::thread t3{f, s1.interp(), "t3(s1)"};
-		std::thread t4{f, SubInterpreter::current(), "t4(main)"};
+		auto t1 = s1.Run(0, code);
+		auto t2 = s2.Run(1, code);
+		auto t3 = s2.Run(2, code);
+		auto t4 = s1.Run(3, code);
+		auto t5 = interpreter.Run(4, code);
+
+		// std::thread t1{f, s1.interp(), "t1(s1)"};
+		// std::thread t2{f, s2.interp(), "t2(s2)"};
+		// std::thread t3{f, s1.interp(), "t3(s1)"};
+		// std::thread t5{f, SubInterpreter::current(), "t4(main)"};
 
 		ScopeGuard<PyThread> guard;
 
@@ -218,6 +259,7 @@ print('main: setting sys.xxx={}'.format(sys.xxx))
 		t2.join();
 		t3.join();
 		t4.join();
+		t5.join();
 
 		return;
 	}
