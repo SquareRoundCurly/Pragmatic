@@ -15,6 +15,7 @@ namespace SRC::AG
 {
 	namespace
 	{
+		#pragma region Python scopes
 		// Default handler concept, handlers restore states when out of scope
 		template<typename Handler>
 		concept HandlerConcept = requires(Handler handler, PyThreadState* state)
@@ -98,6 +99,38 @@ namespace SRC::AG
 				PyThreadState_DeleteCurrent();
 			}
 		};
+		#pragma endregion Python scopes
+
+		void SetupGlobals(PyThreadState* substate, long ID)
+		{
+			PyObject* main_module = nullptr;
+			PyObject* global_dict = nullptr;
+			PyObject* id = nullptr;
+
+			// PyThreadState_Swap(substate);
+
+			main_module = PyImport_AddModule("__main__");
+			if (main_module == NULL) goto error;
+
+			global_dict = PyModule_GetDict(main_module);
+			if (global_dict == NULL) goto error;
+
+			id = PyLong_FromLong(ID);  // This is an int, not a long.
+			if (id == NULL) goto error;
+
+			// Set the integer as a global variable.
+			if (PyDict_SetItemString(global_dict, "TNAME", id) < 0) goto error;
+
+			// Decrease reference count for our integer object
+			Py_DECREF(id);
+			return;
+
+			error: // Handle error & clean up any Python objects we created.
+			Py_XDECREF(main_module);
+			Py_XDECREF(global_dict);
+			Py_XDECREF(id);
+			return;
+		}
 
 		class SubInterpreter
 		{
@@ -132,59 +165,36 @@ namespace SRC::AG
 				});
 			}
 
+			std::thread RunFile(const int ID, const std::filesystem::path& file)
+			{
+				return std::thread([this, ID, &file]()
+				{
+					std::string fileStr = file.string();
+					const char *fileCStr = fileStr.c_str();
+
+					// Open file
+					FILE* filePtr = std::fopen(fileCStr, "r");
+					if (filePtr == nullptr)
+					{
+						std::cerr << "Could not open file " << file << '\n';
+						return;
+					}
+
+
+					ScopeGuard<PyInterpreter> interpreter { threadState->interp };
+					ScopeGuard<PyState> swap { interpreter };
+
+					SetupGlobals(threadState, ID);
+					PyRun_AnyFileEx(filePtr, fileCStr, 1);
+				});
+			}
+
 			PyInterpreterState* interp() { return threadState->interp; }
 			static PyInterpreterState* current() { return ScopeGuard<PyInterpreter>::Current()->interp; }
 
 			private:
 			PyThreadState* threadState;
 		};
-
-		void f(PyInterpreterState* interp, const char* tname)
-		{
-			std::string code = R"PY(
-from __future__ import print_function
-import sys
-
-print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
-			)PY";
-
-			code.replace(code.find("TNAME"), 5, tname);
-
-			ScopeGuard<PyInterpreter> interpreter { interp };
-			ScopeGuard<PyState> swap { interpreter };
-			PyRun_SimpleString(code.c_str());
-		}
-
-		void SetupGlobals(PyThreadState* substate, long ID)
-		{
-			PyObject* main_module = nullptr;
-			PyObject* global_dict = nullptr;
-			PyObject* id = nullptr;
-
-			PyThreadState_Swap(substate);
-
-			main_module = PyImport_AddModule("__main__");
-			if (main_module == NULL) goto error;
-
-			global_dict = PyModule_GetDict(main_module);
-			if (global_dict == NULL) goto error;
-
-			id = PyLong_FromLong(ID);  // This is an int, not a long.
-			if (id == NULL) goto error;
-
-			// Set the integer as a global variable.
-			if (PyDict_SetItemString(global_dict, "ID", id) < 0) goto error;
-
-			// Decrease reference count for our integer object
-			Py_DECREF(id);
-			return;
-
-			error: // Handle error & clean up any Python objects we created.
-			Py_XDECREF(main_module);
-			Py_XDECREF(global_dict);
-			Py_XDECREF(id);
-			return;
-		}
 	} // Anonymous namespace
 
 	PythonInterpreter::PythonInterpreter()
@@ -203,7 +213,6 @@ print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
 		Py_Finalize();
 	}
 
-
 	std::thread PythonInterpreter::Run(const int ID, std::string& code)
 	{
 		auto* _interpreter = PyThreadState_Get()->interp;
@@ -221,6 +230,9 @@ print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
 std::string code = R"PY(
 from __future__ import print_function
 import sys
+import threading
+
+print(f"Running on thread {threading.get_ident()}")
 
 print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
 			)PY";
@@ -237,21 +249,22 @@ print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
 
 from __future__ import print_function
 import sys
+import threading
+
+print(f"Running on thread {threading.get_ident()}")
 
 sys.xxx = ['abc']
 print('main: setting sys.xxx={}'.format(sys.xxx))
 		)PY");
 
-		auto t1 = s1.Run(0, code);
+
+		std::filesystem::path file = "auto_graph/subinterpreter_test.py";
+
+		auto t1 = s1.RunFile(0, file);
 		auto t2 = s2.Run(1, code);
 		auto t3 = s2.Run(2, code);
-		auto t4 = s1.Run(3, code);
-		auto t5 = interpreter.Run(4, code);
-
-		// std::thread t1{f, s1.interp(), "t1(s1)"};
-		// std::thread t2{f, s2.interp(), "t2(s2)"};
-		// std::thread t3{f, s1.interp(), "t3(s1)"};
-		// std::thread t5{f, SubInterpreter::current(), "t4(main)"};
+		auto t4 = interpreter.Run(4, code);
+		auto t5 = s1.Run(3, code);
 
 		ScopeGuard<PyThread> guard;
 
@@ -263,80 +276,4 @@ print('main: setting sys.xxx={}'.format(sys.xxx))
 
 		return;
 	}
-
-	// PythonInterpreter::PythonInterpreter()
-	// {
-	// 	PyConfig config;
-	// 	PyConfig_InitPythonConfig(&config);
-	// 	config.home = const_cast<wchar_t*>(CONCAT(L, PYTHON_ROOT_DIR));
-
-	// 	auto status = Py_InitializeFromConfig(&config);
-	// 	if (PyStatus_Exception(status))
-	// 	{
-	// 		std::cout << "Couldn't initialize Python" << std::endl;
-	// 	}
-
-	// 	mainstate = PyThreadState_Get();
-	// }
-
-	// PythonInterpreter::~PythonInterpreter()
-	// {
-	// 	isRunning = false;
-
-	// 	// End subinterpreters
-	// 	subinterpreters.clear();
-		
-	// 	// End main interpreter
-	// 	PyThreadState_Swap(mainstate);
-	// 	Py_Finalize();
-	// }
-
-	// void PythonInterpreter::CreateSubinterpreter()
-	// {
-	// 	subinterpreters.emplace_back(std::make_unique<PythonSubinterpreter>(*this, subinterpreters.size()));
-	// }
-
-	// void PythonInterpreter::Run(int index, const std::string& script)
-	// {
-	// 	subinterpreters[index]->Run(script);
-	// }
-
-	// PythonSubinterpreter::PythonSubinterpreter(const PythonInterpreter& pythonInterpreter, const size_t index)
-	// : pythonInterpreter(pythonInterpreter), index(index)
-	// {
-	// 	const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
-		
-	// 	ReleaseGIL();
-
-	// 	PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
-	// 	if (PyStatus_Exception(status))
-	// 	{
-	// 		/* Since no new thread state was created, there is no exception to
-	// 		propagate; raise a fresh one after swapping in the old thread
-	// 		state. */
-	// 		PyThreadState_Swap(pythonInterpreter.mainstate);
-	// 		_PyErr_SetFromPyStatus(status);
-	// 		PyObject *exc = PyErr_GetRaisedException();
-	// 		PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
-	// 		_PyErr_ChainExceptions1(exc);
-	// 		return;
-	// 	}
-
-	// 	assert(substate != NULL);
-
-	// 	SetupGlobals(substate, (long)index);
-	// }
-
-	// PythonSubinterpreter::~PythonSubinterpreter()
-	// {
-	// 	PyThreadState_Swap(substate);
-	// 	Py_EndInterpreter(substate);
-	// }
-
-	// void PythonSubinterpreter::Run(const std::string& script)
-	// {
-	// 	PyCompilerFlags cflags = {0};
-	// 	PyThreadState_Swap(substate);
-	// 	auto r = PyRun_SimpleStringFlags(script.c_str(), &cflags);
-	// }
 }
