@@ -165,7 +165,7 @@ namespace SRC::AG
 				});
 			}
 
-			std::thread RunFile(const int ID, const std::filesystem::path& file)
+			std::thread Run(const int ID, const std::filesystem::path& file)
 			{
 				return std::thread([this, ID, &file]()
 				{
@@ -213,6 +213,27 @@ namespace SRC::AG
 		Py_Finalize();
 	}
 
+	void PythonInterpreter::RunOnMain(std::string& code)
+	{
+		PyRun_SimpleString(code.c_str());
+	}
+
+	void PythonInterpreter::RunOnMain(const std::filesystem::path& file)
+	{
+		std::string fileStr = file.string();
+		const char *fileCStr = fileStr.c_str();
+
+		// Open file
+		FILE* filePtr = std::fopen(fileCStr, "r");
+		if (filePtr == nullptr)
+		{
+			std::cerr << "Could not open file " << file << '\n';
+			return;
+		}
+
+		PyRun_AnyFileEx(filePtr, fileCStr, 1);
+	}
+
 	std::thread PythonInterpreter::Run(const int ID, std::string& code)
 	{
 		auto* _interpreter = PyThreadState_Get()->interp;
@@ -227,44 +248,47 @@ namespace SRC::AG
 		});
 	}
 
-std::string code = R"PY(
-from __future__ import print_function
-import sys
-import threading
+	std::thread PythonInterpreter::Run(const int ID, const std::filesystem::path& file)
+	{
+		auto* _interpreter = PyThreadState_Get()->interp;
+		return std::thread([this, ID, file, _interpreter]()
+		{
+			std::string fileStr = file.string();
+			const char *fileCStr = fileStr.c_str();
 
-print(f"Running on thread {threading.get_ident()}")
+			// Open file
+			FILE* filePtr = std::fopen(fileCStr, "r");
+			if (filePtr == nullptr)
+			{
+				std::cerr << "Could not open file " << file << '\n';
+				return;
+			}
 
-print("TNAME: sys.xxx={}".format(getattr(sys, 'xxx', 'attribute not set')))
-			)PY";
+			ScopeGuard<PyInterpreter> interpreter { _interpreter };
+			ScopeGuard<PyState> swap { interpreter };
+
+			SetupGlobals(ScopeGuard<PyState>::Current(), ID);
+			PyRun_AnyFileEx(filePtr, fileCStr, 1);
+		});
+	}
 
 	void Test()
 	{
+		std::filesystem::path sub_file = "auto_graph/subinterpreter_test.py";
+		std::filesystem::path main_file = "auto_graph/interpreter_test.py";
+
 		PythonInterpreter interpreter;
 
 		SubInterpreter s1;
 		SubInterpreter s2;
 
-    	PyRun_SimpleString(R"PY(
-# set sys.xxx, it will only be reflected in t4, which runs in the context of the main interpreter
+		interpreter.RunOnMain(main_file);
 
-from __future__ import print_function
-import sys
-import threading
-
-print(f"Running on thread {threading.get_ident()}")
-
-sys.xxx = ['abc']
-print('main: setting sys.xxx={}'.format(sys.xxx))
-		)PY");
-
-
-		std::filesystem::path file = "auto_graph/subinterpreter_test.py";
-
-		auto t1 = s1.RunFile(0, file);
-		auto t2 = s2.Run(1, code);
-		auto t3 = s2.Run(2, code);
-		auto t4 = interpreter.Run(4, code);
-		auto t5 = s1.Run(3, code);
+		auto t1 = s1.Run(0, sub_file);
+		auto t2 = s2.Run(1, sub_file);
+		auto t3 = s2.Run(2, sub_file);
+		auto t4 = interpreter.Run(4, sub_file);
+		auto t5 = s1.Run(3, sub_file);
 
 		ScopeGuard<PyThread> guard;
 
