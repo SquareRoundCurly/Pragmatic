@@ -30,6 +30,9 @@ namespace SRC::AG
 		~PythonInterpreter();
 
 		public:
+		void RunOnMain(std::string& code);
+		void RunOnMain(const std::filesystem::path& file);
 		std::thread Run(const int ID, std::string& code);
+		std::thread Run(const int ID, const std::filesystem::path& file);
 	};
 } // namespace SRC::AG
