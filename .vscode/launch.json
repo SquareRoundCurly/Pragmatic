@@ -13,17 +13,24 @@
 			"justMyCode": true
 		},
 		{
-            "name": "auto_graph",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/auto_graph.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "internalConsole",
-            "preLaunchTask": "build",
-			"symbolSearchPath": "${workspaceFolder}/build;${workspaceFolder}/external/cpython/PCbuild/amd64"
-        }
+			"name": "auto_graph RELEASE",
+			"type": "python",
+			"request": "launch",
+			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python.exe",
+			"program": "${workspaceFolder}/auto_graph/auto_graph.py",
+			"console": "integratedTerminal",
+			"justMyCode": true,
+			"preLaunchTask": "build extension RELEASE"
+		},
+		{
+			"name": "auto_graph DEBUG",
+			"type": "python",
+			"request": "launch",
+			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python_d.exe",
+			"program": "${workspaceFolder}/auto_graph/auto_graph.py",
+			"console": "integratedTerminal",
+			"justMyCode": true,
+			"preLaunchTask": "build extension DEBUG"
+		}
 	]
 }

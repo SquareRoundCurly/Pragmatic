@@ -1,35 +1,30 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "build",
-            "type": "cmake",
-            "command": "build",
-			"targets": [
-				"auto_graph"
-			],
-			"dependsOn":[
-				
-			],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": [
-				"$msCompile",
-                "$gcc"
-            ]
-        }
-    ],
-    "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "dedicated",
-        "clear": false,
-        "showReuseMessage": true
-    }
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build extension RELEASE",
+			"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe",
+			"args": [
+				"auto_graph/setup.py",
+				"build_ext"
+			]
+		},
+		{
+			"label": "build extension DEBUG",
+			"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe",
+			"args": [
+				"auto_graph/setup.py",
+				"build_ext",
+				"--debug"
+			]
+		}
+	],
+	"presentation": {
+		"echo": true,
+		"reveal": "always",
+		"focus": false,
+		"panel": "dedicated",
+		"clear": false,
+		"showReuseMessage": true
+	}
 }
