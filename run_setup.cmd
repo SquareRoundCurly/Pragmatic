@@ -1,1 +1,0 @@
-external\cpython\PCbuild\amd64\python.exe auto_graph\setup.py build_ext --debug
