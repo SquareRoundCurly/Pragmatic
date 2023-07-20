@@ -8,7 +8,7 @@
 #include <thread>
 
 #ifdef _MSC_VER
-	#define __PRETTY_FUNCTION__ __FUNCSIG__
+#	define __PRETTY_FUNCTION__ __FUNCSIG__
 #endif
 
 #define CONCAT_IMPL(x, y) x##y // Helper macro to concatenate two tokens
@@ -23,34 +23,25 @@ namespace SRC::Debug
 		uint32_t threadID;
 	};
 
-	struct InstrumentationSession
-	{
-		std::string name;
-	};
-
 	class Instrumentor
 	{
 		private:
-		InstrumentationSession* m_CurrentSession;
 		std::ofstream m_OutputStream;
 		int m_ProfileCount;
 
 		public:
-		Instrumentor() : m_CurrentSession(nullptr), m_ProfileCount(0) { }
+		Instrumentor() : m_ProfileCount(0) { }
 
-		void BeginSession(const std::string& name, const std::string& filepath = "results.json")
+		void BeginSession(const std::string& filepath = "results.json")
 		{
 			m_OutputStream.open(filepath);
 			WriteHeader();
-			m_CurrentSession = new InstrumentationSession { name };
 		}
 
 		void EndSession()
 		{
 			WriteFooter();
 			m_OutputStream.close();
-			delete m_CurrentSession;
-			m_CurrentSession = nullptr;
 			m_ProfileCount = 0;
 		}
 
@@ -135,7 +126,7 @@ namespace SRC::Debug
 
 
 #if PROFILE
-	#define PROFILE_BEGIN_SESSION(name, path)	::SRC::Debug::Instrumentor::Get().BeginSession(name, path)
+	#define PROFILE_BEGIN_SESSION(name, path)	::SRC::Debug::Instrumentor::Get().BeginSession(path)
 	#define PROFILE_END_SESSION()				::SRC::Debug::Instrumentor::Get().EndSession()
 	#define PROFILE_SCOPE(name)					::SRC::Debug::InstrumentationTimer CONCAT(timer, __LINE__)(name)
 	#define PROFILE_FUNCTION()					PROFILE_SCOPE(__PRETTY_FUNCTION__)
