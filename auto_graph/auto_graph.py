@@ -10,11 +10,11 @@ import threading
 import time
 import random
 
-time.sleep(random.randint(1, 10))
+time.sleep(random.uniform(0.1, 3))
 print(f"Running on thread {threading.get_ident()}")
 """
 
-for i in range(5):
+for i in range(100):
 	auto_graph_cpp.test(sleepy_code)
 
 print('end')
