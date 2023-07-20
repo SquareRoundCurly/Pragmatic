@@ -79,6 +79,8 @@
 		"span": "cpp",
 		"filesystem": "cpp",
 		"numeric": "cpp",
-		"random": "cpp"
+		"random": "cpp",
+		"functional": "cpp",
+		"future": "cpp"
 	}
 }
