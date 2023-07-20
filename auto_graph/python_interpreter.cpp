@@ -76,14 +76,11 @@ namespace SRC::auto_graph
 			while (true)
 			{
 				std::string code;
-				if (!queue.wait_dequeue_timed(code, 1s))
-					continue;
-				if (code == "__END__")
-					break;
+				queue.wait_dequeue(code);
+				if (code == "__END__") break;
 
 				{
 					PROFILE_SCOPE("PyRun_SimpleString");
-
 					auto* oldState = PyThreadState_Swap(newState);
 					PyRun_SimpleString(code.c_str());
 					PyThreadState_Swap(oldState);
@@ -103,12 +100,18 @@ namespace SRC::auto_graph
 	{
 		PROFILE_FUNCTION();
 
-		queue.enqueue("__END__");
-		thread.join();
+		{
+			PROFILE_SCOPE("Waiting for tasks to finish");
+			queue.enqueue("__END__");
+			thread.join();
+		}
 
-		PyThreadState_Swap(subinterpreterThreadState);
-		Py_EndInterpreter(subinterpreterThreadState);
-		PyThreadState_Swap(mainThreadState);
+		{
+			PROFILE_SCOPE("Finalizing subinterpreter");
+			PyThreadState_Swap(subinterpreterThreadState);
+			Py_EndInterpreter(subinterpreterThreadState);
+			PyThreadState_Swap(mainThreadState);
+		}
 	}
 
 	void Subinterpreter::Enque(const std::string& code)
