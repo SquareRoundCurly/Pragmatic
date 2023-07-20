@@ -9,32 +9,32 @@ using namespace std::chrono_literals;
 
 // auto_graph
 #include "python_interpreter.hpp"
-
-extern "C"
-{
-	int Add(int a, int b) { return a + b; }
-}
-
-static PyObject* add(PyObject* self, PyObject* args)
-{
-	int a;
-	int b;
-
-	if(!PyArg_ParseTuple(args, "ii", &a, &b)) return NULL;
-
-	return Py_BuildValue("i", a + b);
-}
+#include "instrument.hpp"
 
 static PyObject* test(PyObject* self, PyObject* args)
 {
-	SRC::auto_graph::Test();
+	const char* str;
+	if(!PyArg_ParseTuple(args, "s", &str)) return NULL;
+
+	SRC::auto_graph::Test(str);
+	
 	Py_RETURN_NONE;
+}
+
+// Cleanup function
+static PyObject* cleanup(PyObject* self, PyObject* args)
+{
+    std::cout << "Cleaning up auto_graph" << std::endl;
+    
+	PROFILE_END_SESSION();
+
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef methods[] =
 {
-	{ "add",  add, METH_VARARGS, "Add two numbers." },
-	{ "test", test, METH_NOARGS, "Print 'test' to the console." },
+	{ "test", test, METH_VARARGS, "Print 'test' to the console." },
+	{ "cleanup", cleanup, METH_NOARGS, "Cleanup function to be called before exit" },
 	{ NULL, NULL, 0, NULL }
 };
 
@@ -49,10 +49,12 @@ static struct PyModuleDef addmodule =
 
 PyMODINIT_FUNC PyInit_auto_graph_cpp(void)
 {
+	PROFILE_BEGIN_SESSION("auto_graph_cpp", "auto_grap_profile.json");
 	return PyModule_Create(&addmodule);
 }
 
 PyMODINIT_FUNC PyInit_auto_graph_cpp_d(void)
 {
+	PROFILE_BEGIN_SESSION("auto_graph_cpp", "auto_grap_profile.json");
 	return PyModule_Create(&addmodule);
 }

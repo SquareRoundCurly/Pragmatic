@@ -1,5 +1,6 @@
 {
 	"python.terminal.activateEnvironment": false,
+	"C_Cpp.default.cppStandard": "gnu++20",
 	"files.associations": {
 		"algorithm": "cpp",
 		"array": "cpp",
@@ -76,6 +77,8 @@
 		"queue": "cpp",
 		"ranges": "cpp",
 		"span": "cpp",
-		"filesystem": "cpp"
+		"filesystem": "cpp",
+		"numeric": "cpp",
+		"random": "cpp"
 	}
 }

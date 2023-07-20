@@ -13,7 +13,7 @@
 			"justMyCode": true
 		},
 		{
-			"name": "auto_graph RELEASE",
+			"name": "Python auto_graph RELEASE",
 			"type": "python",
 			"request": "launch",
 			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python.exe",
@@ -23,7 +23,7 @@
 			"preLaunchTask": "build extension RELEASE"
 		},
 		{
-			"name": "auto_graph DEBUG",
+			"name": "Python auto_graph DEBUG",
 			"type": "python",
 			"request": "launch",
 			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python_d.exe",
@@ -31,6 +31,19 @@
 			"console": "integratedTerminal",
 			"justMyCode": true,
 			"preLaunchTask": "build extension DEBUG"
-		}
+		},
+		{
+			"name": "C++ Attach",
+			"type": "cppvsdbg",
+			"request": "attach",
+			"processId": ""
+		},
+		{
+			"name": "auto_graph Debug",
+			"type": "pythoncpp",
+			"request": "launch",
+			"pythonLaunchName": "Python auto_graph DEBUG",
+			"cppAttachName": "C++ Attach",
+		},
 	]
 }

@@ -1,6 +1,14 @@
+import atexit
+import time
 import auto_graph_cpp
 
-print(auto_graph_cpp.add(1, 2))
+# Register the cleanup function to be called at exit
+atexit.register(auto_graph_cpp.cleanup)
 
-
-auto_graph_cpp.test()
+auto_graph_cpp.test('print("hello")')
+auto_graph_cpp.test(
+    """
+for	i in range(10):
+    print(i)
+	"""
+)

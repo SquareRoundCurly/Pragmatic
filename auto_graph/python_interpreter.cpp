@@ -7,32 +7,73 @@
 // External
 #include <Python.h>
 
+// auto_graph
+#include "instrument.hpp"
+
 namespace SRC::auto_graph
 {
-	void Test()
+	void Test(const std::string& str)
 	{
+		Subinterpreter interpreter;
+		interpreter.Run(str);
+	}
+
+	Subinterpreter::Subinterpreter()
+	{
+		PROFILE_FUNCTION();
+
+		mainThreadState = PyThreadState_Get();
+
 		// Create a new sub-interpreter
-		PyThreadState* mainInterpreterState = PyThreadState_Get();
-		PyThreadState* subInterpreterState = Py_NewInterpreter();
+		const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
+		Py_NewInterpreterFromConfig(&subinterpreterThreadState, &config);
 
-		if (subInterpreterState == NULL)
+		thread = std::thread([this]()
 		{
-			return; // PyErr_NoMemory();
-		}
+			auto newState = PyThreadState_New(subinterpreterThreadState->interp);
 
-		// Switch to the new interpreter
-		PyThreadState_Swap(subInterpreterState);
+			while (true)
+			{
+				std::string code;
+				queue.wait_dequeue(code);
 
-		// Run the code
-		int result = PyRun_SimpleString("print('hello from subinterpreter')");
+				if (code == "__END__") break;
 
-		// Clean up the sub-interpreter
-		Py_EndInterpreter(subInterpreterState);
+				{
+					PROFILE_SCOPE("PyRun_SimpleString");
 
-		// Switch back to the main interpreter
-		PyThreadState_Swap(mainInterpreterState);
+					PyEval_RestoreThread(newState);
+					auto* oldState = PyThreadState_Swap(newState);
+					PyRun_SimpleString(code.c_str());
+					PyThreadState_Swap(oldState);
+				}
+			}
+		
+			PyThreadState_Clear(newState);
+			PyThreadState_DeleteCurrent();
+			
+			std::cout << "Exiting thread: " << std::this_thread::get_id() << std::endl;
+		});
 
-		// Return the result as a Python object
-		std::cout << PyLong_FromLong(result) << std::endl;
+		PyThreadState_Swap(mainThreadState);
+	}
+
+	Subinterpreter::~Subinterpreter()
+	{
+		PROFILE_FUNCTION();
+
+		queue.enqueue("__END__");
+		thread.join();
+
+		PyThreadState_Swap(subinterpreterThreadState);
+		Py_EndInterpreter(subinterpreterThreadState);
+		PyThreadState_Swap(mainThreadState);
+	}
+
+	void Subinterpreter::Run(const std::string& code)
+	{
+		PROFILE_FUNCTION();
+
+		queue.enqueue(code);
 	}
 } // namespace SRC::auto_graph
