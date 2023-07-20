@@ -10,6 +10,7 @@ using namespace std::chrono_literals;
 // auto_graph
 #include "python_interpreter.hpp"
 #include "instrument.hpp"
+#include "streams.hpp"
 
 static PyObject* test(PyObject* self, PyObject* args)
 {
@@ -20,17 +21,6 @@ static PyObject* test(PyObject* self, PyObject* args)
 
 	SRC::auto_graph::Test(str);
 	
-	Py_RETURN_NONE;
-}
-
-static PyObject* init(PyObject* self, PyObject* args)
-{
-	PROFILE_FUNCTION();
-
-	std::cout << "Initializing auto_graph" << std::endl;
-
-	//SRC::auto_graph::Initialize();
-
 	Py_RETURN_NONE;
 }
 
@@ -49,7 +39,6 @@ static PyObject* cleanup(PyObject* self, PyObject* args)
 static PyMethodDef methods[] =
 {
 	{ "test", test, METH_VARARGS, "Print 'test' to the console." },
-	{ "init", init, METH_NOARGS, "Initializes auto_graph" },
 	{ "cleanup", cleanup, METH_NOARGS, "Cleanup function to be called before exit" },
 	{ NULL, NULL, 0, NULL }
 };

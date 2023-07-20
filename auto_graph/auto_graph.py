@@ -5,16 +5,18 @@ import auto_graph_cpp
 # Register the cleanup function to be called at exit
 # atexit.register(auto_graph_cpp.cleanup)
 
-auto_graph_cpp.init()
+sleepy_code = """
+import threading
+import time
+import random
 
-auto_graph_cpp.test('print("hello")')
-auto_graph_cpp.test(
-    """
-for	i in range(10):
-    print(i)
-	"""
-)
+time.sleep(random.randint(1, 10))
+print(f"Running on thread {threading.get_ident()}")
+"""
 
-auto_graph_cpp.cleanup()
+for i in range(5):
+	auto_graph_cpp.test(sleepy_code)
 
 print('end')
+
+auto_graph_cpp.cleanup()
