@@ -13,6 +13,8 @@ using namespace std::chrono_literals;
 
 static PyObject* test(PyObject* self, PyObject* args)
 {
+	PROFILE_FUNCTION();
+
 	const char* str;
 	if(!PyArg_ParseTuple(args, "s", &str)) return NULL;
 
@@ -21,19 +23,33 @@ static PyObject* test(PyObject* self, PyObject* args)
 	Py_RETURN_NONE;
 }
 
-// Cleanup function
+static PyObject* init(PyObject* self, PyObject* args)
+{
+	PROFILE_FUNCTION();
+
+	std::cout << "Initializing auto_graph" << std::endl;
+
+	//SRC::auto_graph::Initialize();
+
+	Py_RETURN_NONE;
+}
+
 static PyObject* cleanup(PyObject* self, PyObject* args)
 {
-    std::cout << "Cleaning up auto_graph" << std::endl;
-    
+	PROFILE_FUNCTION();
+
+	SRC::auto_graph::Cleanup();
+	std::cout << "Cleaned up auto_graph" << std::endl;
+	
 	PROFILE_END_SESSION();
 
-    Py_RETURN_NONE;
+	Py_RETURN_NONE;
 }
 
 static PyMethodDef methods[] =
 {
 	{ "test", test, METH_VARARGS, "Print 'test' to the console." },
+	{ "init", init, METH_NOARGS, "Initializes auto_graph" },
 	{ "cleanup", cleanup, METH_NOARGS, "Cleanup function to be called before exit" },
 	{ NULL, NULL, 0, NULL }
 };
@@ -50,11 +66,15 @@ static struct PyModuleDef addmodule =
 PyMODINIT_FUNC PyInit_auto_graph_cpp(void)
 {
 	PROFILE_BEGIN_SESSION("auto_graph_cpp", "auto_grap_profile.json");
+	PROFILE_FUNCTION();
+
+	SRC::auto_graph::Initialize();
+
 	return PyModule_Create(&addmodule);
 }
 
+// Is never actially called
 PyMODINIT_FUNC PyInit_auto_graph_cpp_d(void)
 {
-	PROFILE_BEGIN_SESSION("auto_graph_cpp", "auto_grap_profile.json");
-	return PyModule_Create(&addmodule);
+	return PyInit_auto_graph_cpp();
 }

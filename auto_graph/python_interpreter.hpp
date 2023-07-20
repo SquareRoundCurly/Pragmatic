@@ -13,7 +13,9 @@ typedef struct _ts PyThreadState;
 
 namespace SRC::auto_graph
 {
-	void Test(const std::string& str);
+	void Test(const std::string& code);
+	void Initialize();
+	void Cleanup();
 
 	class Subinterpreter
 	{
@@ -22,7 +24,8 @@ namespace SRC::auto_graph
 		~Subinterpreter();
 
 		public:
-		void Run(const std::string& code);
+		void Enque(const std::string& code);
+		inline size_t GetSize() { return queue.size_approx(); }
 
 		private:
 		PyThreadState* mainThreadState;
