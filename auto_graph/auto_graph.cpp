@@ -65,7 +65,7 @@ static struct PyModuleDef addmodule =
 
 PyMODINIT_FUNC PyInit_auto_graph_cpp(void)
 {
-	PROFILE_BEGIN_SESSION("auto_graph_cpp", "auto_grap_profile.json");
+	PROFILE_BEGIN_SESSION("auto_graph_cpp", "auto_graph_profile.json");
 	PROFILE_FUNCTION();
 
 	SRC::auto_graph::Initialize();
