@@ -11,13 +11,13 @@ using namespace std::chrono_literals;
 
 // auto_graph
 #include "instrument.hpp"
+#include "streams.hpp"
 
 namespace
 {
 	using namespace SRC::auto_graph;
 
-	// std::vector<Subinterpreter*> interpreters;
-	Subinterpreter* interpreter;
+	std::vector<Subinterpreter*> interpreters;
 } // anonymous namespace
 
 
@@ -28,7 +28,7 @@ namespace SRC::auto_graph
 		size_t lowest = LLONG_MAX;
 		Subinterpreter* idleInterpreter = nullptr;
 
-		// for (auto& interpreter : interpreters)
+		for (auto& interpreter : interpreters)
 		{
 			if (interpreter->GetSize() <= lowest)
 			{
@@ -42,12 +42,20 @@ namespace SRC::auto_graph
 
 	void Initialize()
 	{
-		interpreter = new Subinterpreter;
+		auto concurrency = std::thread::hardware_concurrency();
+		Out() << "Creating " << concurrency << " subinterpreters" << std::endl;
+		for (size_t i = 0; i < concurrency; i++)
+		{
+			interpreters.push_back(new Subinterpreter);
+		}
 	}
 
 	void Cleanup()
 	{
-		delete interpreter;
+		for (auto* interpreter : interpreters)
+		{
+			delete interpreter;
+		}
 	}
 
 	Subinterpreter::Subinterpreter()
@@ -85,8 +93,7 @@ namespace SRC::auto_graph
 			PyThreadState_Clear(newState);
 			PyThreadState_DeleteCurrent();
 			
-			std::cout << "Exiting thread: " << std::this_thread::get_id() << std::endl;
-			std::cout.flush();
+			Out() << "Exiting thread: " << std::this_thread::get_id() << std::endl;
 		});
 
 		PyThreadState_Swap(mainThreadState);
