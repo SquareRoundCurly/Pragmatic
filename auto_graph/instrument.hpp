@@ -126,12 +126,12 @@ namespace SRC::Debug
 
 
 #if PROFILE
-	#define PROFILE_BEGIN_SESSION(name, path)	::SRC::Debug::Instrumentor::Get().BeginSession(path)
+	#define PROFILE_BEGIN_SESSION(path)	::SRC::Debug::Instrumentor::Get().BeginSession(path)
 	#define PROFILE_END_SESSION()				::SRC::Debug::Instrumentor::Get().EndSession()
 	#define PROFILE_SCOPE(name)					::SRC::Debug::InstrumentationTimer CONCAT(timer, __LINE__)(name)
 	#define PROFILE_FUNCTION()					PROFILE_SCOPE(__PRETTY_FUNCTION__)
 #else
-	#define PROFILE_BEGIN_SESSION(name, path)
+	#define PROFILE_BEGIN_SESSION(path)
 	#define PROFILE_END_SESSION()
 	#define PROFILE_FUNCTION()
 	#define PROFILE_SCOPE(name)

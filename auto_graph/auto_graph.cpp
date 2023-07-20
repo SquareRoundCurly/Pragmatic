@@ -12,14 +12,14 @@ using namespace std::chrono_literals;
 #include "instrument.hpp"
 #include "streams.hpp"
 
-static PyObject* test(PyObject* self, PyObject* args)
+static PyObject* task(PyObject* self, PyObject* args)
 {
 	PROFILE_FUNCTION();
 
 	const char* str;
 	if(!PyArg_ParseTuple(args, "s", &str)) return NULL;
 
-	SRC::auto_graph::Test(str);
+	SRC::auto_graph::AddTask(str);
 	
 	Py_RETURN_NONE;
 }
@@ -38,7 +38,7 @@ static PyObject* cleanup(PyObject* self, PyObject* args)
 
 static PyMethodDef methods[] =
 {
-	{ "test", test, METH_VARARGS, "Print 'test' to the console." },
+	{ "task", task, METH_VARARGS, "Print 'test' to the console." },
 	{ "cleanup", cleanup, METH_NOARGS, "Cleanup function to be called before exit" },
 	{ NULL, NULL, 0, NULL }
 };

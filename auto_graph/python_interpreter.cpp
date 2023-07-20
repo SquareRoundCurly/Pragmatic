@@ -23,7 +23,7 @@ namespace
 
 namespace SRC::auto_graph
 {
-	void Test(const std::string& code)
+	void AddTask(const std::string& code)
 	{
 		size_t lowest = LLONG_MAX;
 		Subinterpreter* idleInterpreter = nullptr;
