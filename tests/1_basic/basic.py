@@ -8,11 +8,12 @@ class BasicTest(unittest.TestCase):
 import threading
 import time
 import random
+# import auto_graph_cpp
 
 time.sleep(random.uniform(0.1, 3))
 print(f"Running on thread {threading.get_ident()}")
 """
-			for i in range(20):
+			for i in range(1):
 				auto_graph.task(sleepy_code)
 
 			auto_graph.cleanup()

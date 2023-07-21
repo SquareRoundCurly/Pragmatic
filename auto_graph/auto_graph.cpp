@@ -43,27 +43,48 @@ static PyMethodDef methods[] =
 	{ NULL, NULL, 0, NULL }
 };
 
-static struct PyModuleDef addmodule =
+typedef struct
 {
-	PyModuleDef_HEAD_INIT,
-	"auto_graph_cpp",      // name of module 
-	NULL,                  // module documentation, may be NULL 
-	-1,                    // size of per-interpreter state of the module, or -1 if the module keeps state in global variables. 
-	methods
+	PyObject *an_object;
+} module_state;
+
+#define get_state(m) ((module_state*)PyModule_GetState(m))
+
+static int mymodule_exec(PyObject *module)
+{
+    // Module initialization logic goes here
+    PROFILE_BEGIN_SESSION("auto_graph_profile.json");
+    PROFILE_FUNCTION();
+    SRC::auto_graph::Initialize();
+    return 0;  // 0 for success, -1 for error (will cause import to fail)
+}
+
+static PyModuleDef_Slot mymodule_slots[] =
+{
+    { Py_mod_exec, mymodule_exec },
+	{ Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED },
+    { 0, NULL }
+};
+
+static struct PyModuleDef mymodule_def =
+{
+    PyModuleDef_HEAD_INIT,
+    "auto_graph_cpp",      // name of module 
+    NULL,                  // module documentation, may be NULL 
+    sizeof(module_state),  // size of per-interpreter state of the module
+    methods,
+    mymodule_slots,
+    NULL,                  // m_traverse
+    NULL,                  // m_clear
+    NULL,                  // m_free
 };
 
 PyMODINIT_FUNC PyInit_auto_graph_cpp(void)
 {
-	PROFILE_BEGIN_SESSION("auto_graph_profile.json");
-	PROFILE_FUNCTION();
-
-	SRC::auto_graph::Initialize();
-
-	return PyModule_Create(&addmodule);
+    return PyModuleDef_Init(&mymodule_def);
 }
 
-// Is never actially called
 PyMODINIT_FUNC PyInit_auto_graph_cpp_d(void)
 {
-	return PyInit_auto_graph_cpp();
+    return PyInit_auto_graph_cpp();
 }

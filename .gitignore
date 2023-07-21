@@ -1,3 +1,5 @@
 build
+dist
 *profile.json
 vc140.pdb
+auto_graph_cpp.egg-info

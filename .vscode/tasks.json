@@ -17,6 +17,15 @@
 				"build_ext",
 				"--debug"
 			]
+		},
+		{
+			"label": "install extension DEBUG",
+			"command": "${workspaceFolder}/external/cpython/PCBuild/amd64/python.exe auto_graph/setup.py build_ext --debug install",
+			"args": [
+				"auto_graph/setup.py",
+				"build_ext",
+				"--debug"
+			]
 		}
 	],
 	"presentation": {
