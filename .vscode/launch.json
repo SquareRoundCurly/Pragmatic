@@ -8,6 +8,7 @@
 			"name": "Python: Current File",
 			"type": "python",
 			"request": "launch",
+			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python.exe",
 			"program": "${file}",
 			"console": "integratedTerminal",
 			"justMyCode": true
@@ -43,6 +44,23 @@
 			"type": "pythoncpp",
 			"request": "launch",
 			"pythonLaunchName": "Python auto_graph DEBUG",
+			"cppAttachName": "C++ Attach",
+		},
+		{
+			"name": "Python: run test_runner DEBUG",
+			"type": "python",
+			"request": "launch",
+			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python_d.exe",
+			"program": "${workspaceFolder}/test_runner.py",
+			"console": "integratedTerminal",
+			"justMyCode": true,
+			"preLaunchTask": "build extension DEBUG"
+		},
+		{
+			"name": "auto_graph tests Debug",
+			"type": "pythoncpp",
+			"request": "launch",
+			"pythonLaunchName": "Python: run test_runner DEBUG",
 			"cppAttachName": "C++ Attach",
 		},
 	]
