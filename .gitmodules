@@ -2,3 +2,7 @@
 	path = external/cpython
 	url = https://github.com/python/cpython
 	branch = 3.12
+
+[submodule "external/readerwriterqueue"]
+	path = external/readerwriterqueue
+	url = https://github.com/cameron314/readerwriterqueue

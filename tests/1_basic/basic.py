@@ -7,7 +7,7 @@ class BasicTest(unittest.TestCase):
 import threading
 import time
 import random
-import auto_graph_cpp
+# import auto_graph_cpp
 
 time.sleep(random.uniform(0.1, 3))
 print(f"Running on thread {threading.get_ident()}")
