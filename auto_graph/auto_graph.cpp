@@ -12,6 +12,8 @@ using namespace std::chrono_literals;
 #include "instrument.hpp"
 #include "streams.hpp"
 
+#include "auto_graph_cpp/Instrumentation.hpp"
+
 typedef struct
 {
 	PyObject *an_object;
@@ -65,6 +67,8 @@ static int ModuleInitialization(PyObject *module)
     // Module initialization logic goes here
     PROFILE_BEGIN_SESSION("auto_graph_profile.json");
     PROFILE_FUNCTION();
+
+	SRC::auto_graph::Register(module);
     
     return 0;  // 0 for success, -1 for error (will cause import to fail)
 }
