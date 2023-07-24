@@ -12,6 +12,22 @@ using namespace std::chrono_literals;
 #include "instrument.hpp"
 #include "streams.hpp"
 
+typedef struct
+{
+	PyObject *an_object;
+} module_state;
+
+#define get_state(m) ((module_state*)PyModule_GetState(m))
+
+static PyObject* initialize(PyObject* self, PyObject* args)
+{
+	PROFILE_FUNCTION();
+
+	SRC::auto_graph::Initialize();
+
+	Py_RETURN_NONE;
+}
+
 static PyObject* task(PyObject* self, PyObject* args)
 {
 	PROFILE_FUNCTION();
@@ -38,42 +54,36 @@ static PyObject* cleanup(PyObject* self, PyObject* args)
 
 static PyMethodDef methods[] =
 {
+	{ "initialize", initialize, METH_NOARGS, "Initializes auto_graph_cpp & subinterpreters." },
 	{ "task", task, METH_VARARGS, "Print 'test' to the console." },
 	{ "cleanup", cleanup, METH_NOARGS, "Cleanup function to be called before exit" },
 	{ NULL, NULL, 0, NULL }
 };
 
-typedef struct
-{
-	PyObject *an_object;
-} module_state;
-
-#define get_state(m) ((module_state*)PyModule_GetState(m))
-
-static int mymodule_exec(PyObject *module)
+static int ModuleInitialization(PyObject *module)
 {
     // Module initialization logic goes here
     PROFILE_BEGIN_SESSION("auto_graph_profile.json");
     PROFILE_FUNCTION();
-    SRC::auto_graph::Initialize();
+    
     return 0;  // 0 for success, -1 for error (will cause import to fail)
 }
 
-static PyModuleDef_Slot mymodule_slots[] =
+static PyModuleDef_Slot slots[] =
 {
-    { Py_mod_exec, mymodule_exec },
+    { Py_mod_exec, ModuleInitialization },
 	{ Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED },
     { 0, NULL }
 };
 
-static struct PyModuleDef mymodule_def =
+static struct PyModuleDef module =
 {
     PyModuleDef_HEAD_INIT,
     "auto_graph_cpp",      // name of module 
     NULL,                  // module documentation, may be NULL 
     sizeof(module_state),  // size of per-interpreter state of the module
     methods,
-    mymodule_slots,
+    slots,
     NULL,                  // m_traverse
     NULL,                  // m_clear
     NULL,                  // m_free
@@ -81,7 +91,7 @@ static struct PyModuleDef mymodule_def =
 
 PyMODINIT_FUNC PyInit_auto_graph_cpp(void)
 {
-    return PyModuleDef_Init(&mymodule_def);
+    return PyModuleDef_Init(&module);
 }
 
 PyMODINIT_FUNC PyInit_auto_graph_cpp_d(void)
