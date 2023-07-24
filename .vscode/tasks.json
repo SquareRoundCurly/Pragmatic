@@ -27,7 +27,42 @@
 				"--debug",
 				"install"
 			]
-		}
+		},
+		{
+			"label": "build python DEBUG",
+			"command": "${workspaceFolder}/external/cpython/PCbuild/build.bat",
+			"args": [
+				"-p",
+				"x64",
+				"-c",
+				"Debug"
+			]
+		},
+		{
+			"label": "build python RELEASE",
+			"command": "${workspaceFolder}/external/cpython/PCbuild/build.bat",
+			"args": [
+				"-p",
+				"x64",
+				"-c",
+				"Release"
+			]
+		},
+		{
+            "label": "Install pip & setuptools",
+            "type": "shell",
+            "command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe -m ensurepip --upgrade && ${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe -m pip install setuptools --upgrade",
+            "problemMatcher": [],
+			"options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/d", "/c"]
+                }
+            },
+            "presentation": {
+                "reveal": "always"
+            }
+        }
 	],
 	"presentation": {
 		"echo": true,
