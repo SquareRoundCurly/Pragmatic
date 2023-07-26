@@ -2,6 +2,8 @@
 // Standard library
 #include <thread>
 #include <string>
+#include <filesystem>
+#include <variant>
 
 // External
 #include "readerwriterqueue.h"
@@ -13,7 +15,9 @@ typedef struct _ts PyThreadState;
 
 namespace SRC::auto_graph
 {
-	void AddTask(const std::string& code);
+	using FileOrCode = std::variant<std::filesystem::path, std::string>;
+
+	void AddTask(const FileOrCode& fileOrCode);
 	void Initialize();
 	void Cleanup();
 
@@ -24,13 +28,13 @@ namespace SRC::auto_graph
 		~Subinterpreter();
 
 		public:
-		void Enque(const std::string& code);
+		void Enque(const FileOrCode& fileOrCode);
 		inline size_t GetSize() { return queue.size_approx(); }
 
 		private:
 		PyThreadState* mainThreadState;
 		PyThreadState* subinterpreterThreadState;
 		std::thread thread;
-		BlockingReaderWriterQueue<std::string> queue;
+		BlockingReaderWriterQueue<FileOrCode> queue;
 	};
 } // namespace SRC::auto_graph

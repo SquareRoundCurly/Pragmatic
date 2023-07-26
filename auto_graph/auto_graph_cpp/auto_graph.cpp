@@ -35,7 +35,12 @@ static PyObject* task(PyObject* self, PyObject* args)
 	const char* str;
 	if(!PyArg_ParseTuple(args, "s", &str)) return NULL;
 
-	SRC::auto_graph::AddTask(str);
+	auto strTask = std::string(str);
+	std::filesystem::path pathTask(strTask);
+    if (std::filesystem::exists(pathTask))
+		SRC::auto_graph::AddTask(pathTask);
+	else
+		SRC::auto_graph::AddTask(strTask);
 	
 	Py_RETURN_NONE;
 }
