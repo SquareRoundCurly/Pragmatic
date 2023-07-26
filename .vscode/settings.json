@@ -81,6 +81,7 @@
 		"numeric": "cpp",
 		"random": "cpp",
 		"functional": "cpp",
-		"future": "cpp"
+		"future": "cpp",
+		"stack": "cpp"
 	}
 }

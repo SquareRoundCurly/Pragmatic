@@ -9,10 +9,9 @@ using namespace std::chrono_literals;
 
 // auto_graph
 #include "python_interpreter.hpp"
-#include "instrument.hpp"
 #include "streams.hpp"
 
-#include "auto_graph_cpp/Instrumentation.hpp"
+#include "auto_graph_cpp/ScopeTimer.hpp"
 
 typedef struct
 {

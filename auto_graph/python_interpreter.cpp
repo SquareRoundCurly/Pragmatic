@@ -10,7 +10,7 @@ using namespace std::chrono_literals;
 #include <Python.h>
 
 // auto_graph
-#include "instrument.hpp"
+#include "auto_graph_cpp/ScopeTimer.hpp"
 #include "streams.hpp"
 
 namespace
