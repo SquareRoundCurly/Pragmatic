@@ -6,6 +6,7 @@ import shutil
 from typing import List
 
 source_dir          = Path(__file__).parent.absolute()
+cpp_source_dir      = source_dir.joinpath('auto_graph_cpp')
 project_dir         = source_dir.parent
 build_dir           = project_dir.joinpath('build')
 extension_build_dir = build_dir.joinpath('lib.win-amd64-cpython-312')
@@ -47,7 +48,7 @@ class CustomBuildExtCommand(build_ext):
 
 module = Extension(
 	module_name,
-	sources = glob_files(source_dir, 'cpp'),
+	sources = glob_files(cpp_source_dir, 'cpp'),
 	include_dirs = list(map(str, [
         python_include_dir,
 		external_dir.joinpath('readerwriterqueue'),

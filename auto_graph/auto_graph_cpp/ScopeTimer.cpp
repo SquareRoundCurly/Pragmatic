@@ -13,7 +13,7 @@
 using namespace moodycamel;
 
 // auto_graph
-#include "../streams.hpp"
+#include "streams.hpp"
 
 namespace
 {
