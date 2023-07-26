@@ -82,6 +82,12 @@
 		"random": "cpp",
 		"functional": "cpp",
 		"future": "cpp",
-		"stack": "cpp"
+		"stack": "cpp",
+		"complex": "cpp",
+		"csignal": "cpp",
+		"cstdarg": "cpp",
+		"set": "cpp",
+		"unordered_set": "cpp",
+		"variant": "cpp"
 	}
 }

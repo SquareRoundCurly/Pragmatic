@@ -23,7 +23,7 @@ namespace
 
 namespace SRC::auto_graph
 {
-	void AddTask(const std::string& code)
+	void AddTask(const FileOrCode& fileOrCode)
 	{
 		size_t lowest = LLONG_MAX;
 		Subinterpreter* idleInterpreter = nullptr;
@@ -37,7 +37,7 @@ namespace SRC::auto_graph
 			}
 		}
 
-		idleInterpreter->Enque(code);
+		idleInterpreter->Enque(fileOrCode);
 	}
 
 	void Initialize()
@@ -75,15 +75,38 @@ namespace SRC::auto_graph
 
 			while (true)
 			{
-				std::string code;
-				queue.wait_dequeue(code);
-				if (code == "__END__") break;
+				FileOrCode fileOrCode;
+				queue.wait_dequeue(fileOrCode);
 
+				if (std::holds_alternative<std::filesystem::path>(fileOrCode))
 				{
-					PROFILE_SCOPE("PyRun_SimpleString");
-					auto* oldState = PyThreadState_Swap(newState);
-					PyRun_SimpleString(code.c_str());
-					PyThreadState_Swap(oldState);
+					auto& filePath = std::get<std::filesystem::path>(fileOrCode);
+
+					auto* file = fopen(filePath.string().c_str(), "r");
+					if(file != NULL)
+					{
+						PROFILE_SCOPE("PyRun_SimpleFile");
+
+						auto* oldState = PyThreadState_Swap(newState);
+						PyRun_SimpleFile(file, "your_python_script.py");
+						PyThreadState_Swap(oldState);
+						
+						fclose(file);
+					}
+				}
+				else
+				{
+					auto& code = std::get<std::string>(fileOrCode);
+
+					if (code == "__END__") break;
+
+					{
+						PROFILE_SCOPE("PyRun_SimpleString");
+
+						auto* oldState = PyThreadState_Swap(newState);
+						PyRun_SimpleString(code.c_str());
+						PyThreadState_Swap(oldState);
+					}
 				}
 			}
 		
@@ -102,7 +125,7 @@ namespace SRC::auto_graph
 
 		{
 			PROFILE_SCOPE("Waiting for tasks to finish");
-			queue.enqueue("__END__");
+			queue.enqueue(std::string("__END__"));
 			thread.join();
 		}
 
@@ -114,10 +137,10 @@ namespace SRC::auto_graph
 		}
 	}
 
-	void Subinterpreter::Enque(const std::string& code)
+	void Subinterpreter::Enque(const FileOrCode& fileOrCode)
 	{
 		PROFILE_FUNCTION();
 
-		queue.enqueue(code);
+		queue.enqueue(fileOrCode);
 	}
 } // namespace SRC::auto_graph
