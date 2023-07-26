@@ -50,7 +50,8 @@ module = Extension(
 	sources = glob_files(source_dir, 'cpp'),
 	include_dirs = list(map(str, [
         python_include_dir,
-		external_dir.joinpath('readerwriterqueue')
+		external_dir.joinpath('readerwriterqueue'),
+		external_dir.joinpath('concurrentqueue')
     ])),
     library_dirs = list(map(str, [
         python_lib_dir
