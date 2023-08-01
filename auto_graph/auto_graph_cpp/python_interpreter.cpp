@@ -23,7 +23,7 @@ namespace
 
 namespace SRC::auto_graph
 {
-	void AddTask(const FileOrCode& fileOrCode)
+	void AddTask(const PythonTask& task)
 	{
 		size_t lowest = LLONG_MAX;
 		Subinterpreter* idleInterpreter = nullptr;
@@ -37,7 +37,7 @@ namespace SRC::auto_graph
 			}
 		}
 
-		idleInterpreter->Enque(fileOrCode);
+		idleInterpreter->Enque(task);
 	}
 
 	void Initialize()
@@ -75,12 +75,12 @@ namespace SRC::auto_graph
 
 			while (true)
 			{
-				FileOrCode fileOrCode;
-				queue.wait_dequeue(fileOrCode);
+				PythonTask task;
+				queue.wait_dequeue(task);
 
-				if (std::holds_alternative<std::filesystem::path>(fileOrCode))
+				if (std::holds_alternative<std::filesystem::path>(task))
 				{
-					auto& filePath = std::get<std::filesystem::path>(fileOrCode);
+					auto& filePath = std::get<std::filesystem::path>(task);
 
 					auto* file = fopen(filePath.string().c_str(), "r");
 					if(file != NULL)
@@ -94,9 +94,9 @@ namespace SRC::auto_graph
 						fclose(file);
 					}
 				}
-				else
+				else if (std::holds_alternative<std::string>(task))
 				{
-					auto& code = std::get<std::string>(fileOrCode);
+					auto& code = std::get<std::string>(task);
 
 					if (code == "__END__") break;
 
@@ -107,6 +107,22 @@ namespace SRC::auto_graph
 						PyRun_SimpleString(code.c_str());
 						PyThreadState_Swap(oldState);
 					}
+				}
+				else if (std::holds_alternative<PyObject*>(task))
+				{
+					auto& callable = std::get<PyObject*>(task);
+
+					{
+						PROFILE_SCOPE("PyObject_CallObject");
+
+						auto* oldState = PyThreadState_Swap(newState);
+						PyObject_CallObject(callable, NULL);
+						PyThreadState_Swap(oldState);
+					}
+				}
+				else
+				{
+					// TODO: Error ...
 				}
 			}
 		
@@ -137,10 +153,10 @@ namespace SRC::auto_graph
 		}
 	}
 
-	void Subinterpreter::Enque(const FileOrCode& fileOrCode)
+	void Subinterpreter::Enque(const PythonTask& task)
 	{
 		PROFILE_FUNCTION();
 
-		queue.enqueue(fileOrCode);
+		queue.enqueue(task);
 	}
 } // namespace SRC::auto_graph

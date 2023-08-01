@@ -12,12 +12,14 @@ using namespace moodycamel;
 // Forward decalartions
 struct _ts;
 typedef struct _ts PyThreadState;
+struct _object;
+typedef struct _object PyObject;
 
 namespace SRC::auto_graph
 {
-	using FileOrCode = std::variant<std::filesystem::path, std::string>;
+	using PythonTask = std::variant<std::filesystem::path, std::string, PyObject*>; // Python file, string or callable
 
-	void AddTask(const FileOrCode& fileOrCode);
+	void AddTask(const PythonTask& task);
 	void Initialize();
 	void Cleanup();
 
@@ -28,13 +30,13 @@ namespace SRC::auto_graph
 		~Subinterpreter();
 
 		public:
-		void Enque(const FileOrCode& fileOrCode);
+		void Enque(const PythonTask& task);
 		inline size_t GetSize() { return queue.size_approx(); }
 
 		private:
 		PyThreadState* mainThreadState;
 		PyThreadState* subinterpreterThreadState;
 		std::thread thread;
-		BlockingReaderWriterQueue<FileOrCode> queue;
+		BlockingReaderWriterQueue<PythonTask> queue;
 	};
 } // namespace SRC::auto_graph
