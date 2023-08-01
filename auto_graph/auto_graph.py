@@ -12,3 +12,6 @@ def task(code: str):
 def cleanup():
 	_ = auto_graph_cpp.ScopeTimer('cleanup')
 	auto_graph_cpp.cleanup()
+
+def print(msg: str):
+	auto_graph_cpp.print(msg)
