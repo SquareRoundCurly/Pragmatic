@@ -30,19 +30,37 @@ static PyObject* initialize(PyObject* self, PyObject* args)
 
 static PyObject* task(PyObject* self, PyObject* args)
 {
-	PROFILE_FUNCTION();
+    PROFILE_FUNCTION();
 
-	const char* str;
-	if(!PyArg_ParseTuple(args, "s", &str)) return NULL;
+    PyObject* obj;
 
-	auto strTask = std::string(str);
-	std::filesystem::path pathTask(strTask);
-    if (std::filesystem::exists(pathTask))
-		SRC::auto_graph::AddTask(pathTask);
-	else
-		SRC::auto_graph::AddTask(strTask);
-	
-	Py_RETURN_NONE;
+    if (!PyArg_ParseTuple(args, "O", &obj)) // Get an object
+    {
+        PyErr_SetString(PyExc_TypeError, "parameter must be a string or callable");
+        return NULL;
+    }
+
+    if (PyUnicode_Check(obj)) // It's a string
+    {
+        const char* str = PyUnicode_AsUTF8(obj);
+        auto strTask = std::string(str);
+        std::filesystem::path pathTask(strTask);
+        if (std::filesystem::exists(pathTask)) // It's a file
+            SRC::auto_graph::AddTask(pathTask);
+        else
+            SRC::auto_graph::AddTask(strTask);
+    }
+    else if (PyCallable_Check(obj)) // It's a callable object
+    {
+        SRC::auto_graph::AddTask(obj);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "parameter must be a string or callable");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
 }
 
 static PyObject* cleanup(PyObject* self, PyObject* args)

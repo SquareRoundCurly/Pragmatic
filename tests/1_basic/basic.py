@@ -2,6 +2,10 @@ import os
 import auto_graph
 import unittest
 
+def print_thread():
+	import threading
+	print(f"print_thread function running on thread {threading.get_ident()}")
+
 class BasicTest(unittest.TestCase):
 	def test_0_build(self):
 		sleepy_code = """
@@ -21,6 +25,7 @@ print(f"Running on thread {threading.get_ident()}")
 				auto_graph.task(sleepy_code)
 
 			auto_graph.task('tests/1_basic/some_other_script.py')
+			auto_graph.task(print_thread)
 
 			auto_graph.cleanup()
 		except Exception as error:
