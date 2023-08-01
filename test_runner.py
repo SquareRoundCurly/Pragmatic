@@ -10,7 +10,7 @@ if __name__ == "__main__":
 	if len(sys.argv) == 2:
 		suite = loader.loadTestsFromName(sys.argv[1])
 	else:
-		suite = loader.discover(test_dir, pattern='*.py')
+		suite = loader.discover(test_dir, pattern='*_test.py')
 
 	# Run the tests
 	runner = unittest.TextTestRunner()
