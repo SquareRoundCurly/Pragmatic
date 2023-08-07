@@ -22,13 +22,13 @@ namespace
 		X(function)        \
 		X(python_function)
 
-	// Generate an enum with fruits
-	#define X(fruit) fruit,
+	// Generate an enum with frame categories
+	#define X(x) x,
 	enum class FrameCategory : uint8_t { FRAME_CATEGORY number_of_categories };
 	#undef X
 
-	// Generate a string array with names of fruits
-	#define X(fruit) #fruit,
+	// Generate a string array with names of frame categories
+	#define X(x) #x,
 	const std::string FrameCategoryNames[] = { FRAME_CATEGORY };
 	#undef X
 
