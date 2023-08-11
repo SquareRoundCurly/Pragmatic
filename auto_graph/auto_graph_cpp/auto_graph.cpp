@@ -11,6 +11,7 @@ using namespace std::chrono_literals;
 #include "python_interpreter.hpp"
 #include "streams.hpp"
 #include "ScopeTimer.hpp"
+#include "Graph.hpp"
 
 typedef struct
 {
@@ -91,12 +92,22 @@ static PyObject* print(PyObject* self, PyObject* args)
 	Py_RETURN_NONE;
 }
 
+static PyObject* testGraph(PyObject* self, PyObject* args)
+{
+	PROFILE_FUNCTION();
+
+	Test();
+
+	Py_RETURN_NONE;
+}
+
 static PyMethodDef methods[] =
 {
 	{ "initialize", initialize, METH_NOARGS, "Initializes auto_graph_cpp & subinterpreters." },
 	{ "task", task, METH_VARARGS, "Python files, strings or functions to add to the executor pool" },
 	{ "cleanup", cleanup, METH_NOARGS, "Cleanup function to be called before exit" },
 	{ "print", print, METH_VARARGS, "A thread safe print function"},
+	{ "testGraph", testGraph, METH_NOARGS, "test function" },
 	{ NULL, NULL, 0, NULL }
 };
 

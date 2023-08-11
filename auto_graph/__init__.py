@@ -1,1 +1,1 @@
-from .auto_graph import initialize, task, cleanup, print
+from .auto_graph import initialize, task, cleanup, print, testGraph

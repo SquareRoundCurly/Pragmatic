@@ -18,7 +18,7 @@
 			"type": "python",
 			"request": "launch",
 			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python.exe",
-			"program": "${workspaceFolder}/auto_graph/auto_graph.py",
+			"program": "${workspaceFolder}/run.py",
 			"console": "integratedTerminal",
 			"justMyCode": true,
 			"preLaunchTask": "build extension RELEASE"
@@ -28,7 +28,7 @@
 			"type": "python",
 			"request": "launch",
 			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python_d.exe",
-			"program": "${workspaceFolder}/auto_graph/auto_graph.py",
+			"program": "${workspaceFolder}/run.py",
 			"console": "integratedTerminal",
 			"justMyCode": true,
 			"preLaunchTask": "build extension DEBUG"
