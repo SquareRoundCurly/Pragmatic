@@ -15,3 +15,6 @@ def cleanup():
 
 def print(msg: str):
 	auto_graph_cpp.print(msg)
+
+def testGraph():
+	auto_graph_cpp.testGraph()
