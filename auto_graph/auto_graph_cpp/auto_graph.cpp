@@ -12,6 +12,7 @@ using namespace std::chrono_literals;
 #include "streams.hpp"
 #include "ScopeTimer.hpp"
 #include "Graph.hpp"
+#include "Node.hpp"
 
 typedef struct
 {
@@ -96,7 +97,36 @@ static PyObject* testGraph(PyObject* self, PyObject* args)
 {
 	PROFILE_FUNCTION();
 
-	Test();
+	using namespace SRC::auto_graph;
+
+	Graph g;
+    
+    Node A { "A" };
+    Node B { "B" };
+    Node C { "C" };
+    Node D { "D" };
+    Node E { "E" };
+    Node F { "F" };
+    Node G { "G" };
+    Node H { "H" };
+    Node I { "I" };
+    Node J { "J" };
+
+    g.AddEdge(A, B, Edge { A, B });
+    g.AddEdge(A, C, Edge { A, C });
+    g.AddEdge(B, D, Edge { B, D });
+    g.AddEdge(C, E, Edge { C, E });
+    g.AddEdge(D, F, Edge { D, F });
+    g.AddEdge(E, F, Edge { E, F });
+    g.AddEdge(F, G, Edge { F, G });
+    g.AddEdge(F, H, Edge { F, H });
+    g.AddEdge(C, I, Edge { C, I });
+    g.AddEdge(I, J, Edge { I, J });
+
+    std::cout << "Topological Sort of the given graph:\n";
+    g.TopologicalSort();
+
+	g.PrintGenerations();
 
 	Py_RETURN_NONE;
 }
@@ -118,6 +148,8 @@ static int ModuleInitialization(PyObject *module)
     PROFILE_FUNCTION();
 
 	SRC::auto_graph::Register(module);
+	SRC::auto_graph::Register_PyNode(module);
+	SRC::auto_graph::Register_PyGraph(module);
     
     return 0;  // 0 for success, -1 for error (will cause import to fail)
 }

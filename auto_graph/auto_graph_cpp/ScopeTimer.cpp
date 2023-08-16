@@ -149,7 +149,7 @@ namespace SRC::auto_graph
 
 	typedef struct
 	{
-		PyObject_HEAD
+		PyObject_HEAD;
 		SRC::auto_graph::ScopeTimer* scopeTimer;
 	} PyScopeTimer;
 
