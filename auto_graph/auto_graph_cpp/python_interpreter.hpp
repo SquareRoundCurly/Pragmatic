@@ -18,7 +18,7 @@ typedef struct _object PyObject;
 
 namespace SRC::auto_graph
 {
-	using PythonTask = std::variant<std::filesystem::path, std::string, PyObject*>; // Python file, string or callable
+	using PythonTask = std::variant<std::monostate, std::filesystem::path, std::string, PyObject*>; // Python file, string or callable
 
 	void AddTask(const PythonTask& task);
 	void Initialize();

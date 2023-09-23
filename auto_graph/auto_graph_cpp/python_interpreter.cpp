@@ -3,6 +3,7 @@
 
 // Standard library
 #include <iostream>
+#include <stdexcept>
 #include <chrono>
 using namespace std::chrono_literals;
 
@@ -25,6 +26,9 @@ namespace SRC::auto_graph
 {
 	void AddTask(const PythonTask& task)
 	{
+		if (std::holds_alternative<std::monostate>(task))
+			throw std::runtime_error("Tried to execute empty task");
+
 		size_t lowest = LLONG_MAX;
 		Subinterpreter* idleInterpreter = nullptr;
 
