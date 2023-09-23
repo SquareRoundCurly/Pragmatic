@@ -4,6 +4,9 @@
 // External
 #include "Python.h"
 
+// auto_graph
+#include "Node.hpp"
+
 namespace SRC::auto_graph
 {
 	void Graph::AddEdge(const Node& source, const Node& target, const Edge& edge)
@@ -161,10 +164,48 @@ namespace SRC::auto_graph
 		Py_RETURN_NONE;
 	}
 
+	static PyObject* PyGraph_get_node_generations(PyGraph* self, PyObject* args)
+	{
+		if (!self->graph)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Graph object not initialized");
+			return nullptr;
+		}
+
+		std::vector<std::vector<Node>> generations = self->graph->GetGenerations();
+		
+		// Top level list
+		PyObject* pyGenerations = PyList_New(generations.size());
+		if (!pyGenerations) return nullptr;
+
+		// Internal lists
+		for (size_t i = 0; i < generations.size(); i++)
+		{
+			PyObject* pyGeneration = PyList_New(generations[i].size());
+			if (!pyGeneration)
+			{
+				Py_DECREF(pyGenerations);
+				return nullptr;
+			}
+
+			for (size_t j = 0; j < generations[i].size(); j++)
+			{
+				auto* nodeObj = CreatePyNode(generations[i][j]);
+
+				PyList_SetItem(pyGeneration, j, nodeObj);
+			}
+
+			PyList_SetItem(pyGenerations, i, pyGeneration);
+		}
+
+		return pyGenerations;
+	}
+
 	static PyMethodDef PyGraph_methods[] =
 	{
 		{ "add_edge", (PyCFunction)PyGraph_add_edge, METH_VARARGS, "Adds a new edge to the graph, from source node to target node" },
 		{ "print_topological_generations", (PyCFunction)PyGraph_print_topological_generations, METH_NOARGS, "Sorts the graph into topological generations & prints them" },
+		{ "get_node_generations", (PyCFunction)PyGraph_get_node_generations, METH_NOARGS, "Sorts the graph into topological generations" },
 		{ nullptr }  // sentinel
 	};
 

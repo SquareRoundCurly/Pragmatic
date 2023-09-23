@@ -29,6 +29,7 @@ namespace SRC::auto_graph
 	};
 
 	int Register_PyNode(PyObject* module);
+	PyObject* CreatePyNode(const Node& node);
 } // namespace SRC::auto_graph
 
 namespace std

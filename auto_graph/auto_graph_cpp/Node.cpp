@@ -34,6 +34,23 @@ namespace SRC::auto_graph
 		Py_TYPE(self)->tp_free((PyObject*)self);
 	}
 
+	static PyObject* PyNode_GetName(PyNode* self)
+	{
+		if (!self->node)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Node object not initialized");
+			return nullptr;
+		}
+
+		return PyUnicode_FromString(self->node->id.c_str());
+	}
+
+	static PyMethodDef PyNode_methods[] =
+	{
+		{ "get_name", (PyCFunction)PyNode_GetName, METH_NOARGS, "Sorts the graph into topological generations & prints them" },
+		{ nullptr }  // sentinel
+	};
+
 	static PyTypeObject PyNodeType =
 	{
 		PyVarObject_HEAD_INIT(NULL, 0)
@@ -63,7 +80,7 @@ namespace SRC::auto_graph
 		0,                                        /* tp_weaklistoffset */
 		0,                                        /* tp_iter */
 		0,                                        /* tp_iternext */
-		0,                                        /* tp_methods */
+		PyNode_methods,                           /* tp_methods */
 		0,                                        /* tp_members */
 		0,                                        /* tp_getset */
 		0,                                        /* tp_base */
@@ -86,6 +103,14 @@ namespace SRC::auto_graph
 			Py_DECREF(&PyNodeType);
 			return -1;
 		}
+	}
+
+	PyObject* CreatePyNode(const Node& node)
+	{
+		PyNode* pyNode = PyObject_New(PyNode, &PyNodeType);
+		pyNode->node = new Node(node); // Copy node
+
+		return (PyObject*)pyNode;
 	}
 
 	#pragma endregion Python
