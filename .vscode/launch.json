@@ -21,7 +21,10 @@
 			"program": "${workspaceFolder}/run.py",
 			"console": "integratedTerminal",
 			"justMyCode": true,
-			"preLaunchTask": "build extension RELEASE"
+			"preLaunchTask": "build extension RELEASE",
+			"presentation": {
+				"hidden": true
+			}
 		},
 		{
 			"name": "Python auto_graph DEBUG",
@@ -31,13 +34,20 @@
 			"program": "${workspaceFolder}/run.py",
 			"console": "integratedTerminal",
 			"justMyCode": true,
-			"preLaunchTask": "build extension DEBUG"
+			"preLaunchTask": "build extension DEBUG",
+			"presentation": {
+				"hidden": true
+			}
 		},
 		{
 			"name": "C++ Attach",
 			"type": "cppvsdbg",
 			"request": "attach",
-			"processId": ""
+			"processId": "",
+			"presentation": {
+				"hidden": true
+			}
+		},
 		},
 		{
 			"name": "auto_graph Debug",

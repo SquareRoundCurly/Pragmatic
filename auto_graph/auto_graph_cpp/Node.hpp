@@ -4,6 +4,9 @@
 #include <string>
 #include <ostream>
 
+// auto_graph
+#include "python_interpreter.hpp"
+
 // Forward declarations
 struct _object;
 typedef struct _object PyObject;
@@ -13,8 +16,10 @@ namespace SRC::auto_graph
 	struct Node
 	{
 		std::string id;
+		PythonTask task;
 
 		Node(const std::string& name);
+		Node(const std::string& name, PythonTask task);
 
 		bool operator==(const Node &other) const
 		{
