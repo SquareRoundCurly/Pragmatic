@@ -4,9 +4,13 @@
 // External
 #include "Python.h"
 
+// auto_graph
+#include "python_interpreter.hpp"
+
 namespace SRC::auto_graph
 {
-	Node::Node(const std::string& name) : id(name) { }
+	Node::Node(const std::string& name) : id(name), task(std::string()) { }
+	Node::Node(const std::string& name, PythonTask task) : id(name), task(task) { }
 
 	#pragma region Python
 
@@ -19,11 +23,37 @@ namespace SRC::auto_graph
 	static int PyNode_init(PyNode *self, PyObject *args, PyObject *kwds)
 	{
 		char* c_name;
+		PyObject* obj = nullptr; // Initialize to nullptr to handle the optional argument
 
-		if (!PyArg_ParseTuple(args, "s", &c_name)) return -1;
+		// Parse the first arg, and optionally the second arg
+		if (!PyArg_ParseTuple(args, "s|O", &c_name, &obj)) return -1;
 
 		std::string name(c_name);
 		self->node = new Node(name);
+
+		// If there is a second arg
+		if (obj)
+		{
+			if (PyUnicode_Check(obj)) // It's a string
+			{
+				const char* str = PyUnicode_AsUTF8(obj);
+				auto strTask = std::string(str);
+				std::filesystem::path pathTask(strTask);
+				if (std::filesystem::exists(pathTask)) // It's a file
+					self->node->task = pathTask;
+				else
+					self->node->task = strTask;
+			}
+			else if (PyCallable_Check(obj)) // It's a callable object
+			{
+				self->node->task = obj;
+			}
+			else
+			{
+				PyErr_SetString(PyExc_TypeError, "Second parameter must be a string or callable");
+				return -1;
+			}
+		}
 
 		return 0;
 	}
@@ -45,9 +75,21 @@ namespace SRC::auto_graph
 		return PyUnicode_FromString(self->node->id.c_str());
 	}
 
+	static void PyNode_Exec(PyNode* self)
+	{
+		if (!self->node)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Node object not initialized");
+			return;
+		}
+
+		SRC::auto_graph::AddTask(self->node->task);
+	}
+
 	static PyMethodDef PyNode_methods[] =
 	{
 		{ "get_name", (PyCFunction)PyNode_GetName, METH_NOARGS, "Sorts the graph into topological generations & prints them" },
+		{ "__exec", (PyCFunction)PyNode_Exec, METH_NOARGS, "Runs the stored task functor"},
 		{ nullptr }  // sentinel
 	};
 
