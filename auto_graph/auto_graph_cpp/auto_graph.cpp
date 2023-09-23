@@ -19,12 +19,81 @@ typedef struct
 	PyObject *an_object;
 } module_state;
 
-#define get_state(m) ((module_state*)PyModule_GetState(m))
+static PyObject* CustomWrite(PyObject* self, PyObject* args)
+{
+	const char* message;
+	if (!PyArg_ParseTuple(args, "s", &message)) {
+		return NULL;
+	}
+
+	SRC::auto_graph::Out() << message;
+
+	Py_RETURN_NONE;
+}
+
+static PyObject* CustomFlush(PyObject* self, PyObject* args)
+{
+	Py_RETURN_NONE;
+}
+
+static PyMethodDef CustomMethods[] =
+{
+	{"write", CustomWrite, METH_VARARGS, "Custom write method"},
+	{"flush", CustomFlush, METH_VARARGS, "Custom flush method"},
+	{NULL, NULL, 0, NULL}
+};
+
+static struct PyModuleDef CustomModule =
+{
+	PyModuleDef_HEAD_INIT,
+	"custom",   // name of module
+	NULL,       // module documentation, may be NULL
+	-1,
+	CustomMethods
+};
+
+static PyMethodDef CustomWriteMethod =
+{
+    "CustomWrite", // name of the python method
+    (PyCFunction) CustomWrite, // C function pointer
+    METH_VARARGS, // flag indicating the calling convention to be used
+    "Custom write function" // docstring
+};
+
+static void RedirectPythonStandardOut()
+{
+	PyObject* sysModule = PyImport_ImportModule("sys");
+	if (!sysModule)
+	{
+		PyErr_Print();
+		return;
+	}
+
+	PyObject* customModule = PyModule_Create(&CustomModule);
+	if (!customModule)
+	{
+		PyErr_Print();
+		Py_DECREF(sysModule);
+		return;
+	}
+
+	if (PyObject_SetAttrString(sysModule, "stdout", customModule) == -1)
+	{
+		PyErr_Print();
+		Py_DECREF(customModule);
+		Py_DECREF(sysModule);
+		return;
+	}
+
+	Py_DECREF(customModule);
+	Py_DECREF(sysModule);
+}
 
 static PyObject* initialize(PyObject* self, PyObject* args)
 {
 	PROFILE_FUNCTION();
 
+	RedirectPythonStandardOut();
 	SRC::auto_graph::Initialize();
 
 	Py_RETURN_NONE;
