@@ -35,6 +35,7 @@ namespace SRC::auto_graph
 
 	int Register_PyNode(PyObject* module);
 	PyObject* CreatePyNode(const Node& node);
+	Node GetNode(PyObject* pyNode);
 } // namespace SRC::auto_graph
 
 namespace std

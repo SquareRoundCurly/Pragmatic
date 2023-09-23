@@ -64,7 +64,10 @@
 			"program": "${workspaceFolder}/test_runner.py",
 			"console": "integratedTerminal",
 			"justMyCode": true,
-			"preLaunchTask": "build extension DEBUG"
+			"preLaunchTask": "build extension DEBUG",
+			"presentation": {
+				"hidden": true
+			}
 		},
 		{
 			"name": "auto_graph tests Debug",

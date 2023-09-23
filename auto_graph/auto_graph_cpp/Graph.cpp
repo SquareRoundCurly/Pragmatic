@@ -135,18 +135,17 @@ namespace SRC::auto_graph
 			return nullptr;
 		}
 
-
 		// Parse two string arguments
-		char *source, *target;
-		if (!PyArg_ParseTuple(args, "ss", &source, &target))
+		PyObject *pySource, *pyTarget;
+		if (!PyArg_ParseTuple(args, "OO", &pySource, &pyTarget))
 		{
 			return nullptr;
 		}
 
-		Node A { std::string(source) };
-    	Node B { std::string(target) };
+		Node sourceNode = GetNode(pySource);
+		Node targetNode = GetNode(pyTarget);
 
-		self->graph->AddEdge(A, B, Edge{ A, B });
+		self->graph->AddEdge(sourceNode, targetNode, Edge{ sourceNode, targetNode });
 
 		Py_RETURN_NONE;
 	}

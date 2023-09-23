@@ -9,7 +9,7 @@
 
 namespace SRC::auto_graph
 {
-	Node::Node(const std::string& name) : id(name), task(std::string()) { }
+	Node::Node(const std::string& name) : id(name), task(std::monostate()) { }
 	Node::Node(const std::string& name, PythonTask task) : id(name), task(task) { }
 
 	#pragma region Python
@@ -75,15 +75,18 @@ namespace SRC::auto_graph
 		return PyUnicode_FromString(self->node->id.c_str());
 	}
 
-	static void PyNode_Exec(PyNode* self)
+	static PyObject* PyNode_Exec(PyNode* self)
 	{
 		if (!self->node)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "Node object not initialized");
-			return;
+			Py_RETURN_NONE;
 		}
 
-		SRC::auto_graph::AddTask(self->node->task);
+		if (!std::holds_alternative<std::monostate>(self->node->task))
+			SRC::auto_graph::AddTask(self->node->task);
+
+		Py_RETURN_NONE;
 	}
 
 	static PyMethodDef PyNode_methods[] =
@@ -153,6 +156,24 @@ namespace SRC::auto_graph
 		pyNode->node = new Node(node); // Copy node
 
 		return (PyObject*)pyNode;
+	}
+
+	Node GetNode(PyObject* pyNode)
+	{
+		if (PyUnicode_Check(pyNode))
+		{
+			const char* source = PyUnicode_AsUTF8(pyNode);
+			return Node { std::string(source) };
+		}
+		else if (PyObject_TypeCheck(pyNode, &PyNodeType)) // Assuming PyNodeType is the type object for PyNode
+		{
+			return *reinterpret_cast<PyNode*>(pyNode)->node;
+		}
+		else
+		{
+			PyErr_SetString(PyExc_TypeError, "Source must be a string or a Node");
+			return Node { "" };
+		}
 	}
 
 	#pragma endregion Python
