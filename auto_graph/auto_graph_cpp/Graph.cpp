@@ -4,11 +4,32 @@
 // External
 #include "Python.h"
 
-// auto_graph
-#include "Node.hpp"
-
 namespace SRC::auto_graph
 {
+	const Node& Graph::GetNode(const std::string& name)
+	{
+		for (const auto& pair : adjacency)
+		{
+			const Node& node = pair.first;
+			if (node.name == name)
+				return node;
+		}
+
+		throw std::runtime_error("Node with name " + name + " not found");
+	}
+
+	Node Graph::AddNode(std::string name, PythonTask task)
+	{
+		auto result = adjacency.emplace(Node(name, task), std::vector<Edge>{ });
+
+		if (!result.second)
+		{
+			throw std::runtime_error("Tried to add an already existing node");
+		}
+
+		return result.first->first;
+	}
+
 	void Graph::AddEdge(const Node& source, const Node& target, const Edge& edge)
 	{
 		adjacency[source].push_back(edge);
@@ -123,8 +144,102 @@ namespace SRC::auto_graph
 
 	static void PyGraph_dealloc(PyGraph* self)
 	{
+		for (auto& pair : self->graph->pyNodes)
+		{
+            Py_DECREF(pair.second); // Decrement reference count when Graph is destroyed
+        }
+
 		delete self->graph;
 		Py_TYPE(self)->tp_free((PyObject*)self);
+	}
+
+	static PyObject* PyGraph_GetNode(PyGraph* self, PyObject* args)
+	{
+		if (!self->graph)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Graph object not initialized");
+			Py_RETURN_NONE;
+		}
+
+		// Parse a string
+		char* c_name;
+		if (!PyArg_ParseTuple(args, "s", &c_name))
+		{
+			return nullptr;
+		}
+		std::string name(c_name);
+
+		auto it = self->graph->pyNodes.find(name);
+		if (it != self->graph->pyNodes.end())
+		{
+			Py_INCREF(it->second); // Increment reference count when returning to the caller
+			return it->second;
+		}
+
+		// Handle case where node does not exist
+		PyErr_SetString(PyExc_KeyError, "Node does not exist");
+		return nullptr;
+
+		return self->graph->pyNodes[name];
+	}
+
+	static PyObject* PyGraph_AddNode(PyGraph* self, PyObject* args)
+	{
+		if (!self->graph)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Graph object not initialized");
+			Py_RETURN_NONE;
+		}
+
+		auto* graph = self->graph;
+
+		// Parse a string and an optional PythonTask
+		char* c_name;
+		PyObject* pythonTask = nullptr; // Initialize to nullptr to handle the optional argument
+		if (!PyArg_ParseTuple(args, "s|O", &c_name, &pythonTask))
+		{
+			return nullptr;
+		}
+
+		// First arg, node name
+		std::string name(c_name);
+
+		// If there is a second arg, a PythonTask
+		PythonTask task;
+		if (pythonTask)
+		{
+			if (PyUnicode_Check(pythonTask)) // It's a string
+			{
+				const char* str = PyUnicode_AsUTF8(pythonTask);
+				auto strTask = std::string(str);
+				std::filesystem::path pathTask(strTask);
+				if (std::filesystem::exists(pathTask)) // It's a file
+					task = pathTask;
+				else
+					task = strTask;
+			}
+			else if (PyCallable_Check(pythonTask)) // It's a callable object
+			{
+				task = pythonTask;
+			}
+			else
+			{
+				PyErr_SetString(PyExc_TypeError, "Second parameter must be a string or callable");
+				return nullptr;
+			}
+		}
+
+		self->graph->AddNode(name, task);
+
+		// Create PyNode
+		PyObject* pyNode = CreatePyNode(name, self->graph);
+		if (pyNode)
+		{
+			Py_INCREF(pyNode); // Increment reference count when storing in the container
+			self->graph->pyNodes[name] = pyNode;
+		}
+		
+		return pyNode;
 	}
 
 	static PyObject* PyGraph_add_edge(PyGraph* self, PyObject* args)
@@ -189,7 +304,7 @@ namespace SRC::auto_graph
 
 			for (size_t j = 0; j < generations[i].size(); j++)
 			{
-				auto* nodeObj = CreatePyNode(generations[i][j]);
+				PyObject* nodeObj = self->graph->pyNodes[generations[i][j].name]; // CreatePyNode(generations[i][j].name, self->graph);
 
 				PyList_SetItem(pyGeneration, j, nodeObj);
 			}
@@ -202,6 +317,8 @@ namespace SRC::auto_graph
 
 	static PyMethodDef PyGraph_methods[] =
 	{
+		{ "get_node", (PyCFunction)PyGraph_GetNode, METH_VARARGS, "Retrieves a node from the graph" },
+		{ "add_node", (PyCFunction)PyGraph_AddNode, METH_VARARGS, "Adds a node to the graph" },
 		{ "add_edge", (PyCFunction)PyGraph_add_edge, METH_VARARGS, "Adds a new edge to the graph, from source node to target node" },
 		{ "print_topological_generations", (PyCFunction)PyGraph_print_topological_generations, METH_NOARGS, "Sorts the graph into topological generations & prints them" },
 		{ "get_node_generations", (PyCFunction)PyGraph_get_node_generations, METH_NOARGS, "Sorts the graph into topological generations" },

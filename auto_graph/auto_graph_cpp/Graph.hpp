@@ -7,8 +7,13 @@
 #include <unordered_map>
 #include <queue>
 
+// auto_graph
 #include "Node.hpp"
 #include "Edge.hpp"
+
+// Forward declarations
+struct _object;
+typedef struct _object PyObject;
 
 namespace SRC::auto_graph
 {
@@ -19,6 +24,11 @@ namespace SRC::auto_graph
 		std::unordered_map<Node, std::vector<Edge>> adjacency;
 
 		public:
+		std::unordered_map<std::string, PyObject*> pyNodes;
+
+		public:
+		const Node& GetNode(const std::string& name);
+		Node AddNode(std::string name, PythonTask task = std::monostate());
 		void AddEdge(const Node& source, const Node& target, const Edge& edge);
 		void TopologicalSort();
 		std::vector<std::vector<Node>> GetGenerations();

@@ -6,85 +6,60 @@
 
 // auto_graph
 #include "python_interpreter.hpp"
+#include "Graph.hpp"
 
 namespace SRC::auto_graph
 {
-	Node::Node(const std::string& name) : id(name), task(std::monostate()) { }
-	Node::Node(const std::string& name, PythonTask task) : id(name), task(task) { }
+	Node::Node(const std::string& name) : name(name), task(std::monostate()) { }
+	Node::Node(const std::string& name, PythonTask task) : name(name), task(task) { }
 
 	#pragma region Python
 
 	typedef struct PyNode
 	{
 		PyObject_HEAD;
-		Node* node;
+
+		std::string name;
+		Graph* graph;
+
+		PyObject* __dict__;
+
+		const Node& GetNode() { return graph->GetNode(name); }
 	};
-
-	static int PyNode_init(PyNode *self, PyObject *args, PyObject *kwds)
-	{
-		char* c_name;
-		PyObject* obj = nullptr; // Initialize to nullptr to handle the optional argument
-
-		// Parse the first arg, and optionally the second arg
-		if (!PyArg_ParseTuple(args, "s|O", &c_name, &obj)) return -1;
-
-		std::string name(c_name);
-		self->node = new Node(name);
-
-		// If there is a second arg
-		if (obj)
-		{
-			if (PyUnicode_Check(obj)) // It's a string
-			{
-				const char* str = PyUnicode_AsUTF8(obj);
-				auto strTask = std::string(str);
-				std::filesystem::path pathTask(strTask);
-				if (std::filesystem::exists(pathTask)) // It's a file
-					self->node->task = pathTask;
-				else
-					self->node->task = strTask;
-			}
-			else if (PyCallable_Check(obj)) // It's a callable object
-			{
-				self->node->task = obj;
-			}
-			else
-			{
-				PyErr_SetString(PyExc_TypeError, "Second parameter must be a string or callable");
-				return -1;
-			}
-		}
-
-		return 0;
-	}
 
 	static void PyNode_dealloc(PyNode* self)
 	{
-		delete self->node;
-		Py_TYPE(self)->tp_free((PyObject*)self);
+		// Deallocate __dict__
+        Py_XDECREF(self->__dict__);
+        
+        // Call the placement destructor for name
+        self->name.~basic_string();
+        
+        // Free the object itself
+        Py_TYPE(self)->tp_free((PyObject*)self);
 	}
 
 	static PyObject* PyNode_GetName(PyNode* self)
 	{
-		if (!self->node)
+		if (!self->graph)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "Node object not initialized");
 			return nullptr;
 		}
 
-		return PyUnicode_FromString(self->node->id.c_str());
+		return PyUnicode_FromString(self->GetNode().name.c_str());
 	}
 
 	static PyObject* PyNode_Exec(PyNode* self)
 	{
-		if (!self->node)
+		if (!self->graph)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "Node object not initialized");
 			Py_RETURN_NONE;
 		}
 
-		if (!std::holds_alternative<std::monostate>(self->node->task))
-			SRC::auto_graph::AddTask(self->node->task);
+		if (!std::holds_alternative<std::monostate>(self->GetNode().task))
+			SRC::auto_graph::AddTask(self->GetNode().task);
 
 		Py_RETURN_NONE;
 	}
@@ -114,8 +89,8 @@ namespace SRC::auto_graph
 		0,                                        /* tp_hash  */
 		0,                                        /* tp_call */
 		0,                                        /* tp_str */
-		0,                                        /* tp_getattro */
-		0,                                        /* tp_setattro */
+		PyObject_GenericGetAttr,                  /* tp_getattro */
+		PyObject_GenericSetAttr,                  /* tp_setattro */
 		0,                                        /* tp_as_buffer */
 		Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
 		"Node objects",                           /* tp_doc */
@@ -132,8 +107,8 @@ namespace SRC::auto_graph
 		0,                                        /* tp_dict */
 		0,                                        /* tp_descr_get */
 		0,                                        /* tp_descr_set */
-		0,                                        /* tp_dictoffset */
-		(initproc)PyNode_init,                    /* tp_init */
+		offsetof(PyNode, __dict__),               /* tp_dictoffset */
+		0,                                        /* tp_init */
 		0,                                        /* tp_alloc */
 		PyType_GenericNew,                        /* tp_new */
 	};
@@ -150,10 +125,19 @@ namespace SRC::auto_graph
 		}
 	}
 
-	PyObject* CreatePyNode(const Node& node)
+	PyObject* CreatePyNode(std::string name, SRC::auto_graph::Graph* graph)
 	{
 		PyNode* pyNode = PyObject_New(PyNode, &PyNodeType);
-		pyNode->node = new Node(node); // Copy node
+
+		new (&pyNode->name) std::string(name); // Placement new
+		pyNode->graph = graph;
+
+		pyNode->__dict__ = PyDict_New(); // Initialize __dict__
+        if (!pyNode->__dict__)
+        {
+            Py_DECREF(pyNode);
+            return nullptr;
+        }
 
 		return (PyObject*)pyNode;
 	}
@@ -167,7 +151,7 @@ namespace SRC::auto_graph
 		}
 		else if (PyObject_TypeCheck(pyNode, &PyNodeType)) // Assuming PyNodeType is the type object for PyNode
 		{
-			return *reinterpret_cast<PyNode*>(pyNode)->node;
+			return reinterpret_cast<PyNode*>(pyNode)->GetNode();
 		}
 		else
 		{

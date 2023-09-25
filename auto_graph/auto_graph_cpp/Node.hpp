@@ -7,15 +7,20 @@
 // auto_graph
 #include "python_interpreter.hpp"
 
+
 // Forward declarations
 struct _object;
 typedef struct _object PyObject;
+namespace SRC::auto_graph
+{
+	class Graph;
+}
 
 namespace SRC::auto_graph
 {
 	struct Node
 	{
-		std::string id;
+		std::string name;
 		PythonTask task;
 
 		Node(const std::string& name);
@@ -23,18 +28,18 @@ namespace SRC::auto_graph
 
 		bool operator==(const Node &other) const
 		{
-			return id == other.id;
+			return name == other.name;
 		}
 
 		friend std::ostream& operator<<(std::ostream &os, const Node &node)
 		{
-			os << node.id;
+			os << node.name;
 			return os;
 		}
 	};
 
 	int Register_PyNode(PyObject* module);
-	PyObject* CreatePyNode(const Node& node);
+	PyObject* CreatePyNode(std::string name, SRC::auto_graph::Graph* graph);
 	Node GetNode(PyObject* pyNode);
 } // namespace SRC::auto_graph
 
@@ -45,7 +50,7 @@ namespace std
 	{
 		size_t operator()(const SRC::auto_graph::Node &node) const
 		{
-			return hash<std::string>()(node.id);
+			return hash<std::string>()(node.name);
 		}
 	};
 }

@@ -6,20 +6,25 @@ import auto_graph
 
 auto_graph.initialize()
 
-nodeA = auto_graph.Node('a', 'print("hello")')
-nodeA.__exec()
-
-nodeB = auto_graph.Node('b')
-
 g = auto_graph.Graph()
 
-g.add_edge(nodeA, nodeB)
-g.add_edge(nodeB, 'c')
+a = g.add_node('a', 'print("hello")')
+a.stuff = 'a'
+print(a.stuff)
+
+b = g.get_node('a')
+print(b.stuff)
+
+g.add_node('b')
 
 gens = g.get_node_generations()
 for nodes in gens:
 	for node in nodes:
 		node.__exec()
+		if node.get_name() == 'a':
+			print(node.stuff)
+
+a.__exec()
 
 auto_graph.cleanup()
 
