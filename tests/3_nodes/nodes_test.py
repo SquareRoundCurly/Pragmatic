@@ -3,7 +3,22 @@ import auto_graph
 import unittest
 
 class NodesTest(unittest.TestCase):
-	def test_0_nodes(self):
+	def test_0_node_references(self):
+		g = auto_graph.Graph()
+
+		data = 'Some other data'
+
+		a = g.add_node('a')
+		a.dynamic_property = data
+
+		g.add_node('b')
+		g.add_node('c')
+		g.add_node('d')
+
+		node = g.get_node('a')
+		self.assertEqual(node.dynamic_property, data)
+
+	def test_1_topological_generations(self):
 		g = auto_graph.Graph()
 
 		g.add_edge('a', 'b')

@@ -29,6 +29,7 @@ namespace SRC::auto_graph
 		public:
 		const Node& GetNode(const std::string& name);
 		Node AddNode(std::string name, PythonTask task = std::monostate());
+		Node GetOrCreateNode(const std::string& name);
 		void AddEdge(const Node& source, const Node& target, const Edge& edge);
 		void TopologicalSort();
 		std::vector<std::vector<Node>> GetGenerations();

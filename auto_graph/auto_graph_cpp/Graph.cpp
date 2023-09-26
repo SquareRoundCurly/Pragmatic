@@ -30,6 +30,30 @@ namespace SRC::auto_graph
 		return result.first->first;
 	}
 
+	Node Graph::GetOrCreateNode(const std::string& name)
+	{
+		// Try to find the node in the map
+		for (const auto& pair : adjacency)
+		{
+			if (pair.first.name == name)
+				return pair.first;
+		}
+
+		// If not found, create a new node, add it to the map and return it
+		Node newNode(name);
+		adjacency[newNode] = std::vector<Edge> { };
+
+		// Create PyNode
+		PyObject* pyNode = CreatePyNode(name, this);
+		if (pyNode)
+		{
+			Py_INCREF(pyNode); // Increment reference count when storing in the container
+			pyNodes[name] = pyNode;
+		}
+
+		return newNode;
+	}
+
 	void Graph::AddEdge(const Node& source, const Node& target, const Edge& edge)
 	{
 		adjacency[source].push_back(edge);
@@ -242,13 +266,14 @@ namespace SRC::auto_graph
 		return pyNode;
 	}
 
-	static PyObject* PyGraph_add_edge(PyGraph* self, PyObject* args)
+	static PyObject* PyGraph_AddEdge(PyGraph* self, PyObject* args)
 	{
 		if (!self->graph)
 		{
 			PyErr_SetString(PyExc_RuntimeError, "Graph object not initialized");
 			return nullptr;
 		}
+		auto* graph = self->graph;
 
 		// Parse two string arguments
 		PyObject *pySource, *pyTarget;
@@ -257,10 +282,32 @@ namespace SRC::auto_graph
 			return nullptr;
 		}
 
-		Node sourceNode = GetNode(pySource);
-		Node targetNode = GetNode(pyTarget);
+		std::string sourceName, targetName;
+		if (PyUnicode_Check(pySource))
+		{
+			const char* str = PyUnicode_AsUTF8(pySource);
+			sourceName = std::string(str);
+		}
+		else
+		{
+			PyErr_SetString(PyExc_TypeError, "Node must be a string");
+			Py_RETURN_NONE;
+		}
+		if (PyUnicode_Check(pyTarget))
+		{
+			const char* str = PyUnicode_AsUTF8(pyTarget);
+			targetName = std::string(str);
+		}
+		else
+		{
+			PyErr_SetString(PyExc_TypeError, "Node must be a string");
+			Py_RETURN_NONE;
+		}
 
-		self->graph->AddEdge(sourceNode, targetNode, Edge{ sourceNode, targetNode });
+		auto source = graph->GetOrCreateNode(sourceName);
+		auto target = graph->GetOrCreateNode(targetName);
+
+		self->graph->AddEdge(source, target, Edge{ source, target });
 
 		Py_RETURN_NONE;
 	}
@@ -319,7 +366,7 @@ namespace SRC::auto_graph
 	{
 		{ "get_node", (PyCFunction)PyGraph_GetNode, METH_VARARGS, "Retrieves a node from the graph" },
 		{ "add_node", (PyCFunction)PyGraph_AddNode, METH_VARARGS, "Adds a node to the graph" },
-		{ "add_edge", (PyCFunction)PyGraph_add_edge, METH_VARARGS, "Adds a new edge to the graph, from source node to target node" },
+		{ "add_edge", (PyCFunction)PyGraph_AddEdge, METH_VARARGS, "Adds a new edge to the graph, from source node to target node" },
 		{ "print_topological_generations", (PyCFunction)PyGraph_print_topological_generations, METH_NOARGS, "Sorts the graph into topological generations & prints them" },
 		{ "get_node_generations", (PyCFunction)PyGraph_get_node_generations, METH_NOARGS, "Sorts the graph into topological generations" },
 		{ nullptr }  // sentinel
