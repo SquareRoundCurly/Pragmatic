@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Node.hpp"
+#include "Graph.hpp"
 
 namespace SRC::auto_graph
 {
@@ -8,6 +9,7 @@ namespace SRC::auto_graph
 	{
 		Node from;
 		Node to;
-		// Potentially other member variables and functions
+		
+		PythonTask task;
 	};
 } // namespace SRC::auto_graph

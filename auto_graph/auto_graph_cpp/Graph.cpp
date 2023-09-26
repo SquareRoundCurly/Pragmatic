@@ -229,7 +229,7 @@ namespace SRC::auto_graph
 		std::string name(c_name);
 
 		// If there is a second arg, a PythonTask
-		PythonTask task;
+		PythonTask task = std::monostate();
 		if (pythonTask)
 		{
 			if (PyUnicode_Check(pythonTask)) // It's a string
@@ -277,7 +277,8 @@ namespace SRC::auto_graph
 
 		// Parse two string arguments
 		PyObject *pySource, *pyTarget;
-		if (!PyArg_ParseTuple(args, "OO", &pySource, &pyTarget))
+		PyObject* pythonTask = nullptr; // Initialize to nullptr to handle the optional argument
+		if (!PyArg_ParseTuple(args, "OO|O", &pySource, &pyTarget, &pythonTask))
 		{
 			return nullptr;
 		}
@@ -304,10 +305,35 @@ namespace SRC::auto_graph
 			Py_RETURN_NONE;
 		}
 
+		// If there is a second arg, a PythonTask
+		PythonTask task = std::monostate();
+		if (pythonTask)
+		{
+			if (PyUnicode_Check(pythonTask)) // It's a string
+			{
+				const char* str = PyUnicode_AsUTF8(pythonTask);
+				auto strTask = std::string(str);
+				std::filesystem::path pathTask(strTask);
+				if (std::filesystem::exists(pathTask)) // It's a file
+					task = pathTask;
+				else
+					task = strTask;
+			}
+			else if (PyCallable_Check(pythonTask)) // It's a callable object
+			{
+				task = pythonTask;
+			}
+			else
+			{
+				PyErr_SetString(PyExc_TypeError, "Second parameter must be a string or callable");
+				return nullptr;
+			}
+		}
+
 		auto source = graph->GetOrCreateNode(sourceName);
 		auto target = graph->GetOrCreateNode(targetName);
 
-		self->graph->AddEdge(source, target, Edge{ source, target });
+		self->graph->AddEdge(source, target, Edge{ source, target, task });
 
 		Py_RETURN_NONE;
 	}

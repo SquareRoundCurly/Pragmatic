@@ -11,7 +11,7 @@ g = auto_graph.Graph()
 a = g.add_node('a', 'print("Node: A")')
 a.stuff = 'some data'
 
-g.add_edge('a', 'b')
+g.add_edge('a', 'b', 'print("A -> B")')
 g.add_edge('a', 'c')
 g.add_edge('b', 'd')
 
