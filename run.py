@@ -8,23 +8,22 @@ auto_graph.initialize()
 
 g = auto_graph.Graph()
 
-a = g.add_node('a', 'print("hello")')
-a.stuff = 'a'
-print(a.stuff)
+a = g.add_node('a', 'print("Node: A")')
+a.stuff = 'some data'
 
-b = g.get_node('a')
-print(b.stuff)
+g.add_edge('a', 'b')
+g.add_edge('a', 'c')
+g.add_edge('b', 'd')
 
-g.add_node('b')
+topo_gens = g.get_node_generations()
 
-gens = g.get_node_generations()
-for nodes in gens:
-	for node in nodes:
-		node.__exec()
-		if node.get_name() == 'a':
-			print(node.stuff)
-
-a.__exec()
+for generation_counter, gen in enumerate(topo_gens):
+	print(f'Generation {generation_counter}: ', end='')
+	
+	for node in gen:
+		print(node.get_name(), end=' ')
+	
+	print()
 
 auto_graph.cleanup()
 
