@@ -54,11 +54,33 @@ namespace SRC::auto_graph
 		return newNode;
 	}
 
-	void Graph::AddEdge(const Node& source, const Node& target, const Edge& edge)
+	const Edge& Graph::GetEdge(const std::string source, const std::string& target)
+	{
+		// Find the source node in the adjacency map
+		for (const auto& pair : adjacency)
+		{
+			if (pair.first.name == source)
+			{
+				// Search through the associated edges to find the target node
+				for (const auto& edge : pair.second)
+				{
+					if (edge.target.name == target)
+						return edge;
+				}
+			}
+		}
+
+		// If source node or edge not found, throw an exception
+		throw std::runtime_error("Edge not found");
+	}
+
+	Edge Graph::AddEdge(const Node& source, const Node& target, const Edge& edge)
 	{
 		adjacency[source].push_back(edge);
 		if (adjacency.find(target) == adjacency.end())
 			adjacency[target] = { };
+
+		return edge;
 	}
 
 	void Graph::TopologicalSort()
@@ -87,7 +109,7 @@ namespace SRC::auto_graph
 		std::unordered_map<Node, int> indegree;
 		for (const auto &pair : adjacency)
 			for (const Edge &edge : pair.second)
-				indegree[edge.to]++;
+				indegree[edge.target]++;
 
 		std::queue<Node> queue;
 		for (const auto &pair : adjacency)
@@ -108,9 +130,9 @@ namespace SRC::auto_graph
 
 				for (const Edge &edge : adjacency[curr])
 				{
-					indegree[edge.to]--;
-					if (indegree[edge.to] == 0)
-						queue.push(edge.to);
+					indegree[edge.target]--;
+					if (indegree[edge.target] == 0)
+						queue.push(edge.target);
 				}
 			}
 
@@ -143,7 +165,7 @@ namespace SRC::auto_graph
 
 		for (const Edge& edge : adjacency[source])
 		{
-			Node target = edge.to; // Assuming the Edge type has a member 'to' pointing to its end node
+			Node target = edge.target; // Assuming the Edge type has a member 'to' pointing to its end node
 			if (!visited[target])
 				TopologicalSortUtil(target, visited, stack);
 		}
@@ -335,7 +357,15 @@ namespace SRC::auto_graph
 
 		self->graph->AddEdge(source, target, Edge{ source, target, task });
 
-		Py_RETURN_NONE;
+		// Create PyEdge
+		PyObject* pyEdge = CreatePyEdge(sourceName, targetName, self->graph);
+		if (pyEdge)
+		{
+			Py_INCREF(pyEdge); // Increment reference count when storing in the container
+			self->graph->pyEdges[{ sourceName, targetName }] = pyEdge;
+		}
+
+		return pyEdge;
 	}
 
 	static PyObject* PyGraph_print_topological_generations(PyGraph* self, PyObject* args)
