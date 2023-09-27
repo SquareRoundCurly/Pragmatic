@@ -58,16 +58,38 @@ namespace SRC::auto_graph
 			Py_RETURN_NONE;
 		}
 
-		if (!std::holds_alternative<std::monostate>(self->GetNode().task))
+		if (!std::holds_alternative<std::monostate>(self->GetNode().task.task))
 			SRC::auto_graph::AddTask(self->GetNode().task);
 
 		Py_RETURN_NONE;
+	}
+
+	static PyObject* PyNode_GetTaskResult(PyNode* self)
+	{
+		if (!self->graph)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Node object not initialized");
+			Py_RETURN_NONE;
+		}
+
+		try 
+		{
+			bool result = self->GetNode().task.result->get_future().get();
+			return PyBool_FromLong(result);
+		}
+		catch (const std::exception& e)
+		{
+			// If an exception was set on the promise, catch it and set Python error.
+			PyErr_SetString(PyExc_RuntimeError, e.what());
+			Py_RETURN_NONE;
+		}
 	}
 
 	static PyMethodDef PyNode_methods[] =
 	{
 		{ "get_name", (PyCFunction)PyNode_GetName, METH_NOARGS, "Sorts the graph into topological generations & prints them" },
 		{ "__exec", (PyCFunction)PyNode_Exec, METH_NOARGS, "Runs the stored task functor"},
+		{ "get_result", (PyCFunction)PyNode_GetTaskResult, METH_NOARGS, "A blocking call that waits for the task result & returns it" },
 		{ nullptr }  // sentinel
 	};
 

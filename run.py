@@ -8,8 +8,10 @@ auto_graph.initialize()
 
 g = auto_graph.Graph()
 
-a = g.add_node('a', 'print("Node: A")')
+a = g.add_node('a', 'True')
 a.stuff = 'some data'
+a.__exec()
+print(f'Result A: {a.get_result()}')
 
 edge = g.add_edge('a', 'b', 'print("A -> B")')
 
