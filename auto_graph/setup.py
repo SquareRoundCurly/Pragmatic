@@ -49,6 +49,7 @@ class CustomBuildExtCommand(build_ext):
 module = Extension(
 	module_name,
 	sources = glob_files(cpp_source_dir, 'cpp'),
+	depends = glob_files(cpp_source_dir, 'hpp'),
 	include_dirs = list(map(str, [
         python_include_dir,
 		external_dir.joinpath('readerwriterqueue'),
