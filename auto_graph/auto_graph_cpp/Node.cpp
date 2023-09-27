@@ -30,13 +30,13 @@ namespace SRC::auto_graph
 	static void PyNode_dealloc(PyNode* self)
 	{
 		// Deallocate __dict__
-        Py_XDECREF(self->__dict__);
-        
-        // Call the placement destructor for name
-        self->name.~basic_string();
-        
-        // Free the object itself
-        Py_TYPE(self)->tp_free((PyObject*)self);
+		Py_XDECREF(self->__dict__);
+		
+		// Call the placement destructor for name
+		self->name.~basic_string();
+		
+		// Free the object itself
+		Py_TYPE(self)->tp_free((PyObject*)self);
 	}
 
 	static PyObject* PyNode_GetName(PyNode* self)
@@ -133,11 +133,11 @@ namespace SRC::auto_graph
 		pyNode->graph = graph;
 
 		pyNode->__dict__ = PyDict_New(); // Initialize __dict__
-        if (!pyNode->__dict__)
-        {
-            Py_DECREF(pyNode);
-            return nullptr;
-        }
+		if (!pyNode->__dict__)
+		{
+			Py_DECREF(pyNode);
+			return nullptr;
+		}
 
 		return (PyObject*)pyNode;
 	}

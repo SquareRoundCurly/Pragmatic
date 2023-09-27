@@ -17,6 +17,16 @@ typedef struct _object PyObject;
 
 namespace SRC::auto_graph
 {
+		struct TupleHash
+		{
+		size_t operator()(const std::tuple<std::string, std::string>& key) const
+		{
+			auto h1 = std::hash<std::string>{}(std::get<0>(key));
+			auto h2 = std::hash<std::string>{}(std::get<1>(key));
+			return h1 ^ h2;
+		}
+	};
+
 	class Graph
 	{
 		private: // Fields
@@ -25,12 +35,18 @@ namespace SRC::auto_graph
 
 		public:
 		std::unordered_map<std::string, PyObject*> pyNodes;
+		std::unordered_map<std::tuple<std::string, std::string>, PyObject*, TupleHash> pyEdges;
 
-		public:
+		public: // Nodes
 		const Node& GetNode(const std::string& name);
 		Node AddNode(std::string name, PythonTask task = std::monostate());
 		Node GetOrCreateNode(const std::string& name);
-		void AddEdge(const Node& source, const Node& target, const Edge& edge);
+
+		public: // Edges
+		const Edge& GetEdge(const std::string source, const std::string& target);
+		Edge AddEdge(const Node& source, const Node& target, const Edge& edge);
+		
+		public: // Sort
 		void TopologicalSort();
 		std::vector<std::vector<Node>> GetGenerations();
 		void PrintGenerations();

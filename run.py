@@ -13,7 +13,7 @@ a.stuff = 'some data'
 
 g.add_edge('a', 'b', 'print("A -> B")')
 g.add_edge('a', 'c')
-g.add_edge('b', 'd')
+edge = g.add_edge('b', 'd')
 
 topo_gens = g.get_node_generations()
 
