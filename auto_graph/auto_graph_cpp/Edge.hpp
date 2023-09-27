@@ -29,5 +29,6 @@ namespace SRC::auto_graph
 		}
 	};
 
+	int Register_PyEdge(PyObject* module);
 	PyObject* CreatePyEdge(std::string source, std::string target, SRC::auto_graph::Graph* graph);
 } // namespace SRC::auto_graph

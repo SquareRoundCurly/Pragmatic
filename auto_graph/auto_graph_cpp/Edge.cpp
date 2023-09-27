@@ -36,8 +36,23 @@ namespace SRC::auto_graph
 		Py_TYPE(self)->tp_free((PyObject*)self);
 	}
 
+	static PyObject* PyEdge_Exec(PyEdge* self)
+	{
+		if (!self->graph)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Edge object not initialized");
+			Py_RETURN_NONE;
+		}
+
+		if (!std::holds_alternative<std::monostate>(self->GetEdge().task))
+			SRC::auto_graph::AddTask(self->GetEdge().task);
+
+		Py_RETURN_NONE;
+	}
+
 	static PyMethodDef PyEdge_methods[] =
 	{
+		{ "__exec", (PyCFunction)PyEdge_Exec, METH_NOARGS, "Runs the stored task functor"},
 		{ nullptr }  // sentinel
 	};
 
@@ -82,6 +97,18 @@ namespace SRC::auto_graph
 		0,                                        /* tp_alloc */
 		PyType_GenericNew,                        /* tp_new */
 	};
+
+	int Register_PyEdge(PyObject* module)
+	{
+		if (PyType_Ready(&PyEdgeType) < 0) return -1;
+
+		Py_INCREF(&PyEdgeType);
+		if (PyModule_AddObject(module, "Edge", (PyObject*)&PyEdgeType) < 0)
+		{
+			Py_DECREF(&PyEdgeType);
+			return -1;
+		}
+	}
 
 	#pragma endregion Python
 
