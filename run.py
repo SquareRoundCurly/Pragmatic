@@ -11,9 +11,10 @@ g = auto_graph.Graph()
 a = g.add_node('a', 'print("Node: A")')
 a.stuff = 'some data'
 
-g.add_edge('a', 'b', 'print("A -> B")')
+edge = g.add_edge('a', 'b', 'print("A -> B")')
+
 g.add_edge('a', 'c')
-edge = g.add_edge('b', 'd')
+g.add_edge('b', 'd')
 
 topo_gens = g.get_node_generations()
 
@@ -25,6 +26,7 @@ for generation_counter, gen in enumerate(topo_gens):
 	
 	print()
 
+edge.__exec()
 auto_graph.cleanup()
 
 pass

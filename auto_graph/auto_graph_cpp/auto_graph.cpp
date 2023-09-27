@@ -218,6 +218,7 @@ static int ModuleInitialization(PyObject *module)
 
 	SRC::auto_graph::Register(module);
 	SRC::auto_graph::Register_PyNode(module);
+	SRC::auto_graph::Register_PyEdge(module);
 	SRC::auto_graph::Register_PyGraph(module);
     
     return 0;  // 0 for success, -1 for error (will cause import to fail)
