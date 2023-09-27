@@ -44,7 +44,7 @@ namespace SRC::auto_graph
 			Py_RETURN_NONE;
 		}
 
-		if (!std::holds_alternative<std::monostate>(self->GetEdge().task))
+		if (!std::holds_alternative<std::monostate>(self->GetEdge().task.task))
 			SRC::auto_graph::AddTask(self->GetEdge().task);
 
 		Py_RETURN_NONE;

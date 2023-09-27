@@ -117,13 +117,13 @@ static PyObject* task(PyObject* self, PyObject* args)
 		auto strTask = std::string(str);
 		std::filesystem::path pathTask(strTask);
 		if (std::filesystem::exists(pathTask)) // It's a file
-			SRC::auto_graph::AddTask(pathTask);
+			SRC::auto_graph::AddTask(SRC::auto_graph::PythonTask(pathTask));
 		else
-			SRC::auto_graph::AddTask(strTask);
+			SRC::auto_graph::AddTask(SRC::auto_graph::PythonTask(strTask));
 	}
 	else if (PyCallable_Check(obj)) // It's a callable object
 	{
-		SRC::auto_graph::AddTask(obj);
+		SRC::auto_graph::AddTask(SRC::auto_graph::PythonTask(obj));
 	}
 	else
 	{

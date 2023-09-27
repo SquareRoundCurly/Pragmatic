@@ -24,8 +24,9 @@ namespace
 
 namespace SRC::auto_graph
 {
-	void AddTask(const PythonTask& task)
+	void AddTask(const PythonTask& pythonTask)
 	{
+		auto task = pythonTask.task;
 		if (std::holds_alternative<std::monostate>(task))
 			throw std::runtime_error("Tried to execute empty task");
 
@@ -41,7 +42,7 @@ namespace SRC::auto_graph
 			}
 		}
 
-		idleInterpreter->Enque(task);
+		idleInterpreter->Enque(pythonTask);
 	}
 
 	void Initialize()
@@ -79,8 +80,10 @@ namespace SRC::auto_graph
 
 			while (true)
 			{
-				PythonTask task;
-				queue.wait_dequeue(task);
+				PythonTask pythonTask;
+				queue.wait_dequeue(pythonTask);
+				PythonTaskVariant task = pythonTask.task;
+				PyObject* result = nullptr;
 
 				if (std::holds_alternative<std::filesystem::path>(task))
 				{
@@ -92,7 +95,7 @@ namespace SRC::auto_graph
 						PROFILE_SCOPE("PyRun_SimpleFile");
 
 						auto* oldState = PyThreadState_Swap(newState);
-						PyRun_SimpleFile(file, "your_python_script.py");
+						result = PyRun_File(file, filePath.string().c_str(), Py_file_input, nullptr, nullptr);
 						PyThreadState_Swap(oldState);
 						
 						fclose(file);
@@ -108,7 +111,9 @@ namespace SRC::auto_graph
 						PROFILE_SCOPE("PyRun_SimpleString");
 
 						auto* oldState = PyThreadState_Swap(newState);
-						PyRun_SimpleString(code.c_str());
+						PyObject* main_module = PyImport_AddModule("__main__");
+						PyObject* global_dict = PyModule_GetDict(main_module);
+						result = PyRun_String(code.c_str(), Py_eval_input, global_dict, global_dict);
 						PyThreadState_Swap(oldState);
 					}
 				}
@@ -120,13 +125,37 @@ namespace SRC::auto_graph
 						PROFILE_SCOPE("PyObject_CallObject");
 
 						auto* oldState = PyThreadState_Swap(newState);
-						PyObject_CallObject(callable, NULL);
+						result = PyObject_CallObject(callable, NULL);
 						PyThreadState_Swap(oldState);
 					}
 				}
 				else
 				{
 					// TODO: Error ...
+				}
+
+				// Check the result and convert it to bool
+				if (result != nullptr)
+				{
+					if (PyBool_Check(result))
+					{
+						bool boolResult = PyObject_IsTrue(result);
+						Py_DECREF(result); // Don't forget to DECREF when done
+
+						// Now you have the boolean result, you can store or use it as you need.
+						pythonTask.result.get()->set_value(boolResult);
+					}
+					else
+					{
+						Py_DECREF(result); // Don't forget to DECREF when done
+						// Handle type mismatch error, maybe set an exception to the promise.
+						pythonTask.result->set_exception(std::make_exception_ptr(std::runtime_error("Python execution returned non-bool type")));
+					}
+				}
+				else
+				{
+					// Handle error, maybe set an exception to the promise.
+					pythonTask.result.get()->set_exception(std::make_exception_ptr(std::runtime_error("Python execution failed")));
 				}
 			}
 		
@@ -145,7 +174,7 @@ namespace SRC::auto_graph
 
 		{
 			PROFILE_SCOPE("Waiting for tasks to finish");
-			queue.enqueue(std::string("__END__"));
+			queue.enqueue({std::string("__END__")});
 			thread.join();
 		}
 

@@ -39,7 +39,7 @@ namespace SRC::auto_graph
 
 		public: // Nodes
 		const Node& GetNode(const std::string& name);
-		Node AddNode(std::string name, PythonTask task = std::monostate());
+		Node AddNode(std::string name, PythonTask task = PythonTask());
 		Node GetOrCreateNode(const std::string& name);
 
 		public: // Edges

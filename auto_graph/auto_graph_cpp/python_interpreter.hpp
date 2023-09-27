@@ -5,6 +5,7 @@
 #include <string>
 #include <filesystem>
 #include <variant>
+#include <future>
 
 // External
 #include "readerwriterqueue.h"
@@ -18,7 +19,15 @@ typedef struct _object PyObject;
 
 namespace SRC::auto_graph
 {
-	using PythonTask = std::variant<std::monostate, std::filesystem::path, std::string, PyObject*>; // Python file, string or callable
+	using PythonTaskVariant = std::variant<std::monostate, std::filesystem::path, std::string, PyObject*>; // Python file, string or callable
+	using PythonResult = std::shared_ptr<std::promise<bool>>;
+	struct PythonTask
+	{
+		PythonTaskVariant task;
+		PythonResult result;
+
+		PythonTask(PythonTaskVariant task = std::monostate()) : task(std::move(task)), result(std::make_shared<std::promise<bool>>()) { }
+	};
 
 	void AddTask(const PythonTask& task);
 	void Initialize();

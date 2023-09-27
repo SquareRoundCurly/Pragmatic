@@ -251,7 +251,7 @@ namespace SRC::auto_graph
 		std::string name(c_name);
 
 		// If there is a second arg, a PythonTask
-		PythonTask task = std::monostate();
+		PythonTask task;
 		if (pythonTask)
 		{
 			if (PyUnicode_Check(pythonTask)) // It's a string
@@ -260,13 +260,13 @@ namespace SRC::auto_graph
 				auto strTask = std::string(str);
 				std::filesystem::path pathTask(strTask);
 				if (std::filesystem::exists(pathTask)) // It's a file
-					task = pathTask;
+					task.task = pathTask;
 				else
-					task = strTask;
+					task.task = strTask;
 			}
 			else if (PyCallable_Check(pythonTask)) // It's a callable object
 			{
-				task = pythonTask;
+				task.task = pythonTask;
 			}
 			else
 			{
@@ -328,7 +328,7 @@ namespace SRC::auto_graph
 		}
 
 		// If there is a second arg, a PythonTask
-		PythonTask task = std::monostate();
+		PythonTask task;
 		if (pythonTask)
 		{
 			if (PyUnicode_Check(pythonTask)) // It's a string
@@ -337,13 +337,13 @@ namespace SRC::auto_graph
 				auto strTask = std::string(str);
 				std::filesystem::path pathTask(strTask);
 				if (std::filesystem::exists(pathTask)) // It's a file
-					task = pathTask;
+					task.task = pathTask;
 				else
-					task = strTask;
+					task.task = strTask;
 			}
 			else if (PyCallable_Check(pythonTask)) // It's a callable object
 			{
-				task = pythonTask;
+				task.task = pythonTask;
 			}
 			else
 			{
