@@ -19,6 +19,86 @@ namespace
 	using namespace SRC::auto_graph;
 
 	std::vector<Subinterpreter*> interpreters;
+
+	enum class CodeType
+	{
+		None,
+		Expression,
+		TopLevel
+	};
+
+	CodeType ClassifyCode(const std::string& code)
+	{
+		PyObject* astModule = PyImport_ImportModule("ast");
+		if (astModule == nullptr)
+		{
+			Out() << "Failed to import ast module" << std::endl;
+			return CodeType::None;
+		}
+
+		PyObject* parseFunc = PyObject_GetAttrString(astModule, "parse");
+		if (parseFunc == nullptr)
+		{
+			Py_DECREF(astModule);
+			Out() << "Failed to get ast.parse" << std::endl;
+			return CodeType::None;
+		}
+
+		PyObject* codeObj = PyUnicode_FromString(code.c_str());
+		if (codeObj == nullptr)
+		{
+			Py_DECREF(parseFunc);
+			Py_DECREF(astModule);
+			Out() << "Failed to create Python string" << std::endl;
+			return CodeType::None;
+		}
+
+		PyObject* args = PyTuple_Pack(1, codeObj);
+		if (args == nullptr)
+		{
+			Py_DECREF(codeObj);
+			Py_DECREF(parseFunc);
+			Py_DECREF(astModule);
+			Out() << "Failed to create arguments tuple" << std::endl;
+			return CodeType::None;
+		}
+
+		// Try parsing as an expression
+		PyObject* result = PyObject_Call(parseFunc, args, Py_BuildValue("{s:s}", "mode", "eval"));
+		if (result != nullptr)
+		{
+			Py_DECREF(result);
+			Py_DECREF(args);
+			Py_DECREF(codeObj);
+			Py_DECREF(parseFunc);
+			Py_DECREF(astModule);
+			return CodeType::Expression;
+		}
+		PyErr_Clear(); // Clear the exception
+
+		// Try parsing as top-level code
+		result = PyObject_Call(parseFunc, args, Py_BuildValue("{s:s}", "mode", "exec"));
+		if (result != nullptr)
+		{
+			Py_DECREF(result);
+			Py_DECREF(args);
+			Py_DECREF(codeObj);
+			Py_DECREF(parseFunc);
+			Py_DECREF(astModule);
+			return CodeType::TopLevel;
+		}
+
+		PyErr_Clear(); // Clear the exception
+
+		// Clean up
+		Py_DECREF(args);
+		Py_DECREF(codeObj);
+		Py_DECREF(parseFunc);
+		Py_DECREF(astModule);
+
+		Out() << "Invalid Python code" << std::endl;
+		return CodeType::None;
+	}
 } // anonymous namespace
 
 
@@ -95,7 +175,12 @@ namespace SRC::auto_graph
 						PROFILE_SCOPE("PyRun_SimpleFile");
 
 						auto* oldState = PyThreadState_Swap(newState);
-						result = PyRun_File(file, filePath.string().c_str(), Py_file_input, nullptr, nullptr);
+
+						PyObject* main_module = PyImport_AddModule("__main__");
+						PyObject* global_dict = PyModule_GetDict(main_module);
+						
+						result = PyRun_File(file, filePath.string().c_str(), Py_file_input, global_dict, nullptr);
+
 						PyThreadState_Swap(oldState);
 						
 						fclose(file);
@@ -111,9 +196,25 @@ namespace SRC::auto_graph
 						PROFILE_SCOPE("PyRun_SimpleString");
 
 						auto* oldState = PyThreadState_Swap(newState);
+
 						PyObject* main_module = PyImport_AddModule("__main__");
 						PyObject* global_dict = PyModule_GetDict(main_module);
-						result = PyRun_String(code.c_str(), Py_eval_input, global_dict, global_dict);
+
+						auto codeType = ClassifyCode(code);
+						switch (codeType)
+						{
+						case CodeType::Expression:
+							result = PyRun_String(code.c_str(), Py_eval_input, global_dict, global_dict);
+							break;
+						
+						case CodeType::TopLevel:
+							result = PyRun_String(code.c_str(), Py_file_input, global_dict, global_dict);
+							break;
+
+						default:
+							break;
+						}
+
 						PyThreadState_Swap(oldState);
 					}
 				}
