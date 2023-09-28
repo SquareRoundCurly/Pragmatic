@@ -336,6 +336,8 @@ namespace SRC::auto_graph
 
 		// If there is a second arg, a PythonTask
 		PythonTask task;
+		task.source = name;
+		task.graph = graph;
 		if (pythonTask)
 		{
 			if (PyUnicode_Check(pythonTask)) // It's a string
@@ -413,6 +415,9 @@ namespace SRC::auto_graph
 
 		// If there is a second arg, a PythonTask
 		PythonTask task;
+		task.source = sourceName;
+		task.target = targetName;
+		task.graph = graph;
 		if (pythonTask)
 		{
 			if (PyUnicode_Check(pythonTask)) // It's a string

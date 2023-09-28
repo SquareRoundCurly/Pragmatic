@@ -13,6 +13,7 @@ using namespace std::chrono_literals;
 // auto_graph
 #include "ScopeTimer.hpp"
 #include "streams.hpp"
+#include "Graph.hpp"
 
 namespace
 {
@@ -118,6 +119,53 @@ namespace
 			}
 		}
 		else throw std::runtime_error("Python execution returned null!");
+	}
+
+	size_t GetNumberOfArgs(PyObject* callable)
+	{
+		size_t paramCount = 0;
+		
+		// Import the inspect module
+		PyObject* inspectModule = PyImport_ImportModule("inspect");
+		if (inspectModule == nullptr)
+		{
+			PyErr_Print(); // Print Python error to stderr
+			return paramCount; // Return 0 if we couldn't import the inspect module
+		}
+
+		// Get the signature of the callable object
+		PyObject* signature = PyObject_CallMethod(inspectModule, "signature", "O", callable);
+		if (signature == nullptr)
+		{
+			PyErr_Print();
+			Py_DECREF(inspectModule);
+			return paramCount;
+		}
+
+		// Get the parameters from the signature
+		PyObject* parameters = PyObject_GetAttrString(signature, "parameters");
+		if (parameters == nullptr)
+		{
+			PyErr_Print();
+			Py_DECREF(signature);
+			Py_DECREF(inspectModule);
+			return paramCount;
+		}
+
+		// Get the values from the parameters dictionary and calculate the count
+		PyObject* paramList = PyMapping_Values(parameters);
+		if (paramList != nullptr)
+		{
+			paramCount = PyList_Size(paramList);
+			Py_DECREF(paramList);
+		}
+
+		// Decrement the reference counts of the remaining Python objects
+		Py_DECREF(parameters);
+		Py_DECREF(signature);
+		Py_DECREF(inspectModule);
+		
+		return paramCount;
 	}
 } // anonymous namespace
 
@@ -249,9 +297,38 @@ namespace SRC::auto_graph
 
 						auto* oldState = PyThreadState_Swap(newState);
 
+						PyObject* sourceNode = nullptr;
+						PyObject* targetNode = nullptr;
+
+						if (pythonTask.source != "")
+							sourceNode = pythonTask.graph->pyNodes[pythonTask.source];
+						if (pythonTask.target != "")
+							targetNode = pythonTask.graph->pyNodes[pythonTask.target];
+
 						if (PyCallable_Check(callable))
 						{
-							result = PyObject_CallObject(callable, NULL);
+							Py_INCREF(callable); // TODO: this is spooky
+							auto paramCount = GetNumberOfArgs(callable);
+
+							// Depending on paramCount, call callable with appropriate arguments
+							if (paramCount == 2)
+							{
+								PyObject* args = PyTuple_Pack(2, sourceNode, targetNode);
+								result = PyObject_CallObject(callable, args);
+								Py_DECREF(args);
+							}
+							else if (paramCount == 1)
+							{
+								PyObject* args = PyTuple_Pack(1, sourceNode);
+								result = PyObject_CallObject(callable, args);
+								Py_DECREF(args);
+							}
+							else
+							{
+								result = PyObject_CallObject(callable, NULL);
+							}
+
+							// Py_DECREF(callable);
 						}
 						else
 						{
