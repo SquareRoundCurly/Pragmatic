@@ -4,6 +4,9 @@
 // External
 #include "Python.h"
 
+// auto_graph
+#include "python_interpreter.hpp"
+
 namespace SRC::auto_graph
 {
 	const Node& Graph::GetNode(const std::string& name)
