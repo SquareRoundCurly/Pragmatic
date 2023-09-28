@@ -1,6 +1,8 @@
 #pragma once
 
+// auto_graph
 #include "Node.hpp"
+#include "PythonTask.hpp"
 
 // Forward decalartions
 namespace SRC::auto_graph

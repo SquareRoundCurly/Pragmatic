@@ -248,7 +248,16 @@ namespace SRC::auto_graph
 						PROFILE_SCOPE("PyObject_CallObject");
 
 						auto* oldState = PyThreadState_Swap(newState);
-						result = PyObject_CallObject(callable, NULL);
+
+						if (PyCallable_Check(callable))
+						{
+							result = PyObject_CallObject(callable, NULL);
+						}
+						else
+						{
+							throw std::exception("Tried to execute non callable python object!");
+						}
+
 						PyThreadState_Swap(oldState);
 					}
 				}

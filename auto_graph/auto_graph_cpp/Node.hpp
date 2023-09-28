@@ -5,7 +5,7 @@
 #include <ostream>
 
 // auto_graph
-#include "python_interpreter.hpp"
+#include "PythonTask.hpp"
 
 
 // Forward declarations

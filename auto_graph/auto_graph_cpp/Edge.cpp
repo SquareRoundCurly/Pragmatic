@@ -6,6 +6,7 @@
 
 // auto_graph
 #include "Graph.hpp"
+#include "python_interpreter.hpp"
 
 namespace SRC::auto_graph
 {
