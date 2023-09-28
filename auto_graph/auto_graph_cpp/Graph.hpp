@@ -48,6 +48,8 @@ namespace SRC::auto_graph
 		
 		public: // Sort
 		void TopologicalSort();
+		std::vector<std::vector<std::pair<Node, std::vector<Edge>>>> NEW_GetGenerations();
+		bool ExecuteGraph();
 		std::vector<std::vector<Node>> GetGenerations();
 		void PrintGenerations();
 

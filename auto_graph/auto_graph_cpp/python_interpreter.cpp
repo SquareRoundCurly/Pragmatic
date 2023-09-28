@@ -99,6 +99,26 @@ namespace
 		Out() << "Invalid Python code" << std::endl;
 		return CodeType::None;
 	}
+
+	PyObject* GetArtificialReturnValue(PyObject* result, PyObject* globalDict)
+	{
+		
+		if (result != nullptr)
+		{
+			PyObject* returnValue = PyDict_GetItemString(globalDict, "__return");
+			if (returnValue != nullptr && PyBool_Check(returnValue))
+			{
+				// No need to DECREF returnValue, PyDict_GetItemString returns a borrowed reference
+				return returnValue;
+			}
+			else
+			{
+				// Handle the case where __return is not set or is not a bool
+				throw std::runtime_error("Python execution did not set __return to a bool");
+			}
+		}
+		else throw std::runtime_error("Python execution returned null!");
+	}
 } // anonymous namespace
 
 
@@ -180,6 +200,7 @@ namespace SRC::auto_graph
 						PyObject* global_dict = PyModule_GetDict(main_module);
 						
 						result = PyRun_File(file, filePath.string().c_str(), Py_file_input, global_dict, nullptr);
+						result = GetArtificialReturnValue(result, global_dict);
 
 						PyThreadState_Swap(oldState);
 						
@@ -209,6 +230,7 @@ namespace SRC::auto_graph
 						
 						case CodeType::TopLevel:
 							result = PyRun_String(code.c_str(), Py_file_input, global_dict, global_dict);
+							result = GetArtificialReturnValue(result, global_dict);
 							break;
 
 						default:
