@@ -9,6 +9,10 @@
 // Fowrard declarations
 struct _object;
 typedef struct _object PyObject;
+namespace SRC::auto_graph
+{
+	class Graph;
+}
 
 namespace SRC::auto_graph
 {
@@ -18,6 +22,10 @@ namespace SRC::auto_graph
 	{
 		PythonTaskVariant task;
 		PythonResult result;
+		
+		std::string source;
+		std::string target;
+		Graph* graph;
 
 		PythonTask(PythonTaskVariant task = std::monostate()) : task(std::move(task)), result(std::make_shared<std::promise<bool>>()) { }
 	};
