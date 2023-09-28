@@ -102,6 +102,87 @@ namespace SRC::auto_graph
 		}
 	}
 
+	std::vector<std::vector<std::pair<Node, std::vector<Edge>>>> Graph::NEW_GetGenerations()
+	{
+		std::vector<std::vector<std::pair<Node, std::vector<Edge>>>> generations;
+
+		std::unordered_map<Node, int> indegree;
+		for (const auto &pair : adjacency)
+			for (const Edge &edge : pair.second)
+				indegree[edge.target]++;
+
+		std::queue<Node> queue;
+		for (const auto &pair : adjacency)
+			if (indegree[pair.first] == 0)
+				queue.push(pair.first);
+
+		while (!queue.empty())
+		{
+			int size = queue.size();
+			std::vector<std::pair<Node, std::vector<Edge>>> currentGeneration;
+
+			for (int i = 0; i < size; i++)
+			{
+				Node curr = queue.front();
+				queue.pop();
+
+				currentGeneration.push_back({curr, adjacency[curr]});
+
+				for (const Edge &edge : adjacency[curr])
+				{
+					indegree[edge.target]--;
+					if (indegree[edge.target] == 0)
+						queue.push(edge.target);
+				}
+			}
+
+			generations.push_back(currentGeneration);
+		}
+
+		return generations;
+	}
+
+	bool Graph::ExecuteGraph()
+	{
+		auto generations = NEW_GetGenerations();
+
+		for (const auto& generation : generations)
+		{
+			for (const auto& pair : generation)
+			{
+				const Node& node = pair.first;
+				const std::vector<Edge>& edges = pair.second;
+
+				// Handle node task
+				bool nodeValue = false;
+				if (std::holds_alternative<std::monostate>(node.task.task))
+					nodeValue = true;
+				else
+				{
+					SRC::auto_graph::AddTask(node.task);
+					nodeValue = node.task.result->get_future().get();
+				}
+
+				// Handle edges
+				if (nodeValue)
+				{
+					for (const Edge& edge : edges)
+					{
+						if (std::holds_alternative<std::monostate>(edge.task.task))
+							nodeValue = true;
+						else
+						{
+							SRC::auto_graph::AddTask(edge.task);
+							if (!edge.task.result->get_future().get())
+								return false; // Stop execution if any edge's exec returns false
+						}
+					}
+				}
+			}
+		}
+		return true; // All edges' exec returned true
+	}
+
 	std::vector<std::vector<Node>> Graph::GetGenerations()
 	{
 		std::vector<std::vector<Node>> generations;
@@ -418,6 +499,19 @@ namespace SRC::auto_graph
 		return pyGenerations;
 	}
 
+	static PyObject* PyGraph_ExecuteGraph(PyGraph* self, PyObject* args)
+	{
+		if (!self->graph)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Graph object not initialized");
+			return nullptr;
+		}
+
+		bool success = self->graph->ExecuteGraph();
+
+		return PyBool_FromLong(success);
+	}
+
 	static PyMethodDef PyGraph_methods[] =
 	{
 		{ "get_node", (PyCFunction)PyGraph_GetNode, METH_VARARGS, "Retrieves a node from the graph" },
@@ -425,6 +519,7 @@ namespace SRC::auto_graph
 		{ "add_edge", (PyCFunction)PyGraph_AddEdge, METH_VARARGS, "Adds a new edge to the graph, from source node to target node" },
 		{ "print_topological_generations", (PyCFunction)PyGraph_print_topological_generations, METH_NOARGS, "Sorts the graph into topological generations & prints them" },
 		{ "get_node_generations", (PyCFunction)PyGraph_get_node_generations, METH_NOARGS, "Sorts the graph into topological generations" },
+		{ "exec", (PyCFunction)PyGraph_ExecuteGraph, METH_NOARGS, "Executes the dependency graph" },
 		{ nullptr }  // sentinel
 	};
 
