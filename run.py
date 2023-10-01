@@ -24,13 +24,6 @@ def run_shell_command(command: str):
 run_shell_command('clang --version')
 
 def compile(source: auto_graph.Node, target: auto_graph.Node):
-	# import gc
-	# import sys
-	# print(sys.getrefcount(source))
-	# print(gc.get_referrers(source))
-	# print(sys.getrefcount(target))
-	# print(gc.get_referrers(target))
-	
 	print(f'Compiling: {source.get_name()} -> {target.get_name()}')
 	return True
 

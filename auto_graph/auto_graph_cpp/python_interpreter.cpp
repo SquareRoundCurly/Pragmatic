@@ -125,46 +125,18 @@ namespace
 	{
 		size_t paramCount = 0;
 		
-		// Import the inspect module
-		PyObject* inspectModule = PyImport_ImportModule("inspect");
-		if (inspectModule == nullptr)
+		PyObject* codeObj = PyObject_GetAttrString(callable, "__code__");
+		if (codeObj != NULL)
 		{
-			PyErr_Print(); // Print Python error to stderr
-			return paramCount; // Return 0 if we couldn't import the inspect module
+			PyObject* argCountObj = PyObject_GetAttrString(codeObj, "co_argcount");
+			if (argCountObj != NULL)
+			{
+				paramCount = PyLong_AsLong(argCountObj);
+				Py_DECREF(argCountObj);
+			}
+			Py_DECREF(codeObj);
 		}
 
-		// Get the signature of the callable object
-		PyObject* signature = PyObject_CallMethod(inspectModule, "signature", "O", callable);
-		if (signature == nullptr)
-		{
-			PyErr_Print();
-			Py_DECREF(inspectModule);
-			return paramCount;
-		}
-
-		// Get the parameters from the signature
-		PyObject* parameters = PyObject_GetAttrString(signature, "parameters");
-		if (parameters == nullptr)
-		{
-			PyErr_Print();
-			Py_DECREF(signature);
-			Py_DECREF(inspectModule);
-			return paramCount;
-		}
-
-		// Get the values from the parameters dictionary and calculate the count
-		PyObject* paramList = PyMapping_Values(parameters);
-		if (paramList != nullptr)
-		{
-			paramCount = PyList_Size(paramList);
-			Py_DECREF(paramList);
-		}
-
-		// Decrement the reference counts of the remaining Python objects
-		Py_DECREF(parameters);
-		Py_DECREF(signature);
-		Py_DECREF(inspectModule);
-		
 		return paramCount;
 	}
 } // anonymous namespace
@@ -307,7 +279,6 @@ namespace SRC::auto_graph
 
 						if (PyCallable_Check(callable))
 						{
-							Py_INCREF(callable); // TODO: this is spooky
 							auto paramCount = GetNumberOfArgs(callable);
 
 							// Depending on paramCount, call callable with appropriate arguments
@@ -327,8 +298,6 @@ namespace SRC::auto_graph
 							{
 								result = PyObject_CallObject(callable, NULL);
 							}
-
-							// Py_DECREF(callable);
 						}
 						else
 						{
