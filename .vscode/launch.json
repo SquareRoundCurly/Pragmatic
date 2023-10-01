@@ -48,7 +48,6 @@
 				"hidden": true
 			}
 		},
-		},
 		{
 			"name": "auto_graph Debug",
 			"type": "pythoncpp",
