@@ -15,6 +15,8 @@ import random
 
 time.sleep(random.uniform(0.1, 3))
 print(f"Running on thread {threading.get_ident()}")
+
+__return = True
 """
 
 		try:
