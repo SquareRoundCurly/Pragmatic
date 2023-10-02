@@ -44,4 +44,4 @@ jobs:
     - name: Run Python tests
       shell: cmd
       run: |
-        external/cpython/PCBuild/amd64/python_d.exe test_runner.py
+        external\cpython\PCBuild\amd64\python_d.exe test_runner.py
