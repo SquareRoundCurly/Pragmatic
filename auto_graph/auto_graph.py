@@ -1,5 +1,8 @@
 
 from . import auto_graph_cpp
+import atexit
+
+atexit.register(auto_graph_cpp.cleanup)
 
 def initialize():
 	_ = auto_graph_cpp.ScopeTimer('initialize')
