@@ -75,5 +75,42 @@
 			"pythonLaunchName": "Python: run test_runner DEBUG",
 			"cppAttachName": "C++ Attach",
 		},
+		{
+			"name": "Python: run test_runner with a testcase DEBUG",
+			"type": "python",
+			"request": "launch",
+			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python_d.exe",
+			"program": "${workspaceFolder}/test_runner.py",
+			"args": [
+				"${input:testCase}"
+			],
+			"console": "integratedTerminal",
+			"justMyCode": true,
+			"preLaunchTask": "build extension DEBUG",
+			"presentation": {
+				"hidden": true
+			}
+		},
+		{
+			"name": "auto_graph test Debug",
+			"type": "pythoncpp",
+			"request": "launch",
+			"pythonLaunchName": "Python: run test_runner with a testcase DEBUG",
+			"cppAttachName": "C++ Attach",
+		},
+	],
+	"inputs": [
+		{
+		"id": "testCase",
+		"type": "pickString",
+		"description": "Select a test to debug",
+		"options": [
+			"1",
+			"2",
+			"3",
+			"4",
+		],
+		"default": "1"
+		}
 	]
 }
