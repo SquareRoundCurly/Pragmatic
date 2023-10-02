@@ -11,7 +11,7 @@
 		},
 		{
 			"label": "build extension DEBUG",
-			"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe",
+			"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe",
 			"args": [
 				"auto_graph/setup.py",
 				"build_ext",
