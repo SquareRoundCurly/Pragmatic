@@ -15,7 +15,18 @@ jobs:
       with:
         submodules: 'recursive'
 
+    - name: Cache Python Build DEBUG
+      id: cache-python-build
+      uses: actions/cache@v2
+      with:
+        path: |
+          external/cpython/PCbuild/amd64
+        key: python-3.12-debug-${{ runner.os }}
+        restore-keys: |
+          python-3.12-debug-${{ runner.os }}
+
     - name: Build Python 3.12 DEBUG
+      if: steps.cache-python-build.outputs.cache-hit != 'true'
       run: |
         external/cpython/PCbuild/build.bat -p x64 -c Debug
 
