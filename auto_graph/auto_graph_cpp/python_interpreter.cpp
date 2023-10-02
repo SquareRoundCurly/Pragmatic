@@ -181,6 +181,8 @@ namespace SRC::auto_graph
 		{
 			delete interpreter;
 		}
+
+		Out() << "Deleted subinterpreters" << std::endl;
 	}
 
 	Subinterpreter::Subinterpreter()
@@ -205,14 +207,18 @@ namespace SRC::auto_graph
 				PythonTaskVariant task = pythonTask.task;
 				PyObject* result = nullptr;
 
-				if (std::holds_alternative<std::filesystem::path>(task))
+				if (std::holds_alternative<std::monostate>(task))
+				{
+					break;
+				}
+				else if (std::holds_alternative<std::filesystem::path>(task))
 				{
 					auto& filePath = std::get<std::filesystem::path>(task);
 
 					auto* file = fopen(filePath.string().c_str(), "r");
 					if(file != NULL)
 					{
-						PROFILE_SCOPE("PyRun_SimpleFile");
+						PROFILE_SCOPE("PyRun_File");
 
 						auto* oldState = PyThreadState_Swap(newState);
 
@@ -229,36 +235,32 @@ namespace SRC::auto_graph
 				}
 				else if (std::holds_alternative<std::string>(task))
 				{
+					PROFILE_SCOPE("PyRun_String");
+
 					auto& code = std::get<std::string>(task);
 
-					if (code == "__END__") break;
+					auto* oldState = PyThreadState_Swap(newState);
 
+					PyObject* main_module = PyImport_AddModule("__main__");
+					PyObject* global_dict = PyModule_GetDict(main_module);
+
+					auto codeType = ClassifyCode(code);
+					switch (codeType)
 					{
-						PROFILE_SCOPE("PyRun_SimpleString");
+					case CodeType::Expression:
+						result = PyRun_String(code.c_str(), Py_eval_input, global_dict, global_dict);
+						break;
+					
+					case CodeType::TopLevel:
+						result = PyRun_String(code.c_str(), Py_file_input, global_dict, global_dict);
+						result = GetArtificialReturnValue(result, global_dict);
+						break;
 
-						auto* oldState = PyThreadState_Swap(newState);
-
-						PyObject* main_module = PyImport_AddModule("__main__");
-						PyObject* global_dict = PyModule_GetDict(main_module);
-
-						auto codeType = ClassifyCode(code);
-						switch (codeType)
-						{
-						case CodeType::Expression:
-							result = PyRun_String(code.c_str(), Py_eval_input, global_dict, global_dict);
-							break;
-						
-						case CodeType::TopLevel:
-							result = PyRun_String(code.c_str(), Py_file_input, global_dict, global_dict);
-							result = GetArtificialReturnValue(result, global_dict);
-							break;
-
-						default:
-							break;
-						}
-
-						PyThreadState_Swap(oldState);
+					default:
+						break;
 					}
+
+					PyThreadState_Swap(oldState);
 				}
 				else if (std::holds_alternative<PyObject*>(task))
 				{
@@ -350,10 +352,13 @@ namespace SRC::auto_graph
 	{
 		PROFILE_FUNCTION();
 
+		
 		{
 			PROFILE_SCOPE("Waiting for tasks to finish");
-			queue.enqueue({std::string("__END__")});
-			thread.join();
+			queue.enqueue({});
+
+			if (thread.joinable())
+				thread.join();
 		}
 
 		{
