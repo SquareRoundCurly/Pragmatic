@@ -34,8 +34,8 @@ jobs:
     - name: Install pip for custom-built Python
       if: steps.cache-python-build.outputs.cache-hit != 'true'
       run: |
-        external/cpython/PCbuild/amd64/python.exe -m ensurepip --upgrade
-        external/cpython/PCbuild/amd64/python.exe -m pip install setuptools --upgrade
+        external/cpython/PCbuild/amd64/python_d.exe -m ensurepip --upgrade
+        external/cpython/PCbuild/amd64/python_d.exe -m pip install setuptools --upgrade
   
     - name: Build auto_graph DEBUG
       run: |
