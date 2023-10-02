@@ -1,4 +1,5 @@
 import sys
+import sysconfig
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from pathlib import Path
@@ -42,9 +43,15 @@ class CustomBuildExtCommand(build_ext):
 		# Post-build step
 		print('Postbuild step')
 		if is_debug:
-			shutil.copy2(extension_build_dir.joinpath(pyd_d_name), source_dir.joinpath(pyd_d_name))
+			src = extension_build_dir.joinpath(pyd_d_name)
+			dst = source_dir.joinpath(pyd_d_name)
+			print(f'copy: \n src: {src}\n dst: {dst}')
+			shutil.copy2(src, dst)
 		else:
-			shutil.copy2(extension_build_dir.joinpath(pyd_name), source_dir.joinpath(pyd_name))
+			src = extension_build_dir.joinpath(pyd_name)
+			dst = source_dir.joinpath(pyd_name)
+			print(f'copy: \n src: {src}\n dst: {dst}')
+			shutil.copy2(src, dst)
 
 module = Extension(
 	module_name,
@@ -70,7 +77,10 @@ module = Extension(
 	]
 )
 
-if '--debug' in sys.argv:
+# If building with debug version of Python, '_d' is already appended.
+# If building with release version of Python,
+# but in debug configuration for this extension, still use '_d'. 
+if '--debug' in sys.argv and not sysconfig.get_config_var('Py_DEBUG'):
 	module.name += '_d'
 
 setup(
