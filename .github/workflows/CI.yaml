@@ -1,0 +1,18 @@
+name: auto_graph tests CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build Python 3.12
+      run: |
+        external/cpython/PCbuild/build.bat -p x64 -c Debug
