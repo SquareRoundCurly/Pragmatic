@@ -15,6 +15,10 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Build Python 3.12
+    - name: Build Python 3.12 DEBUG
       run: |
         external/cpython/PCbuild/build.bat -p x64 -c Debug
+
+    - name: Build auto_graph DEBUG
+      run: |
+        external/cpython/PCbuild/amd64/python.exe auto_graph/setup.py build_ext --debug
