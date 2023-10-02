@@ -1,4 +1,8 @@
 {
+	"[yaml]": {
+		"editor.insertSpaces": true,
+		"editor.tabSize": 2
+	},
 	"python.terminal.activateEnvironment": false,
 	"C_Cpp.default.cppStandard": "gnu++20",
 	"files.associations": {
