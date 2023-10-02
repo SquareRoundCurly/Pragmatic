@@ -34,13 +34,13 @@ jobs:
     - name: Install pip for custom-built Python
       if: steps.cache-python-build.outputs.cache-hit != 'true'
       run: |
-        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-        external/cpython/PCbuild/amd64/python_d.exe get-pip.py
-
-    - name: PIP install
-      run: |
-        external/cpython/PCbuild/amd64/python_d.exe -m pip install setuptools wheel
+        external/cpython/PCbuild/amd64/python.exe -m ensurepip --upgrade
+        external/cpython/PCbuild/amd64/python.exe -m pip install setuptools --upgrade
   
     - name: Build auto_graph DEBUG
       run: |
         external/cpython/PCbuild/amd64/python_d.exe auto_graph/setup.py build_ext --debug
+
+    - name: Run Python tests
+      run: |
+        external/cpython/PCBuild/amd64/python_d.exe test_runner.py
