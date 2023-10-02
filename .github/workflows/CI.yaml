@@ -21,7 +21,7 @@ jobs:
       with:
         path: |
           external/cpython/PCbuild/amd64
-          external/cpython/Lib/site-packages/pip
+          external/cpython/Lib/site-packages
         key: python-3.12-debug-${{runner.os}}
         restore-keys: |
           python-3.12-debug-${{runner.os}}
