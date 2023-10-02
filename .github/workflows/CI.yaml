@@ -42,5 +42,6 @@ jobs:
         external/cpython/PCbuild/amd64/python_d.exe auto_graph/setup.py build_ext --debug
 
     - name: Run Python tests
+      shell: cmd
       run: |
         external/cpython/PCBuild/amd64/python_d.exe test_runner.py
