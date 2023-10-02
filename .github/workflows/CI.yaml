@@ -21,9 +21,9 @@ jobs:
       with:
         path: |
           external/cpython/PCbuild/amd64
-        key: python-3.12-debug-${{ runner.os }}
+        key: python-3.12-debug-${{runner.os}}
         restore-keys: |
-          python-3.12-debug-${{ runner.os }}
+          python-3.12-debug-${{runner.os}}
 
     - name: Build Python 3.12 DEBUG
       if: steps.cache-python-build.outputs.cache-hit != 'true'
@@ -32,4 +32,4 @@ jobs:
 
     - name: Build auto_graph DEBUG
       run: |
-        external/cpython/PCbuild/amd64/python.exe auto_graph/setup.py build_ext --debug
+        external/cpython/PCbuild/amd64/python_d.exe auto_graph/setup.py build_ext --debug
