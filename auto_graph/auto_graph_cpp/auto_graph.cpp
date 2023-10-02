@@ -220,6 +220,9 @@ static int ModuleInitialization(PyObject *module)
 	SRC::auto_graph::Register_PyNode(module);
 	SRC::auto_graph::Register_PyEdge(module);
 	SRC::auto_graph::Register_PyGraph(module);
+
+	RedirectPythonStandardOut();
+	SRC::auto_graph::Initialize();
     
     return 0;  // 0 for success, -1 for error (will cause import to fail)
 }
@@ -231,6 +234,11 @@ static PyModuleDef_Slot slots[] =
     { 0, NULL }
 };
 
+void ModuleFree(void* module)
+{
+	std::cout << "Module freed" << std::endl;
+}
+
 static struct PyModuleDef module =
 {
     PyModuleDef_HEAD_INIT,
@@ -241,7 +249,7 @@ static struct PyModuleDef module =
     slots,
     NULL,                  // m_traverse
     NULL,                  // m_clear
-    NULL,                  // m_free
+    ModuleFree,            // m_free
 };
 
 PyMODINIT_FUNC PyInit_auto_graph_cpp(void)
