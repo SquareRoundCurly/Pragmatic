@@ -3,42 +3,18 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.absolute()))
 
 import auto_graph
-import unittest
-import subprocess
 
-def run_shell_command(command: str):
-	try:
-		result = subprocess.run(command, shell=True, text=True, capture_output=True)
-		
-		if result.stdout:
-			print("Output:")
-			print(result.stdout)
-		
-		if result.stderr:
-			print("Error:")
-			print(result.stderr)
-		
-	except Exception as e:
-		print(f"Failed to run command. Error: {e}")
+sleepy_code = """
+import threading
+import time
 
-run_shell_command('clang --version')
+time.sleep(0.1)
+print(f"Running on thread {threading.get_ident()}")
 
-def compile(source: auto_graph.Node, target: auto_graph.Node):
-	print(f'Compiling: {source.get_name()} -> {target.get_name()}')
-	return True
+__return = True
+"""
 
-def link(source: auto_graph.Node, target: auto_graph.Node):
-	print(f'Linking: {source.get_name()} -> {target.get_name()}')
-	return True
 
-auto_graph.initialize()
-
-g = auto_graph.Graph()
-
-g.add_edge('Main.cpp', 'Main.obj', compile)
-g.add_edge('SomeClass.cpp', 'main.obj', compile)
-g.add_edge('Main.obj', 'SomeClass.obj', link)
-
-g.exec()
-
-auto_graph.cleanup()
+for i in range(20):
+	# auto_graph.task('__return = True')
+	auto_graph.task(sleepy_code)

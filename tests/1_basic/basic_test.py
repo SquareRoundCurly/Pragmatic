@@ -12,9 +12,8 @@ class BasicTest(unittest.TestCase):
 		sleepy_code = """
 import threading
 import time
-import random
 
-time.sleep(random.uniform(1, 3))
+time.sleep(0.1)
 print(f"Running on thread {threading.get_ident()}")
 
 __return = True
@@ -22,8 +21,7 @@ __return = True
 
 		try:
 			for i in range(20):
-				# TODO: Fix this
-				pass # auto_graph.task(sleepy_code)
+				auto_graph.task(sleepy_code)
 
 			auto_graph.task('tests/1_basic/some_other_script.py')
 			auto_graph.task(print_thread)
