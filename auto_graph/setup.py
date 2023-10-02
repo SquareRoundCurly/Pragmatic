@@ -6,21 +6,24 @@ from pathlib import Path
 import shutil
 from typing import List
 
+is_debug_build = '--debug' in sys.argv
+is_debug_python = hasattr(sys, 'gettotalrefcount')
+
 source_dir          = Path(__file__).parent.absolute()
 cpp_source_dir      = source_dir.joinpath('auto_graph_cpp')
 project_dir         = source_dir.parent
 build_dir           = project_dir.joinpath('build')
-extension_build_dir = build_dir.joinpath('lib.win-amd64-cpython-312')
+extension_build_dir = build_dir.joinpath(f'lib.win-amd64-cpython-312{"-pydebug" if is_debug_python else ""}')
 external_dir        = project_dir.joinpath('external')
 python_dir          = external_dir.joinpath('cpython')
 python_include_dir  = python_dir.joinpath('Include')
 python_lib_dir      = python_dir.joinpath('PCbuild/amd64')
 
-module_name = 'auto_graph_cpp'
-pyd_name    = f'{module_name}.cp312-win_amd64.pyd'
-pyd_d_name  = f'{module_name}_d.cp312-win_amd64.pyd'
-
-is_debug = '--debug' in sys.argv
+# If building with debug version of Python, '_d' is already appended.
+# If building with release version of Python,
+# but in debug configuration for this extension, still use '_d'. 
+module_name = f'auto_graph_cpp{"_d" if is_debug_build and not is_debug_python else ""}'
+pyd_name    = f'{module_name}{"_d" if is_debug_python else ""}.cp312-win_amd64.pyd'
 
 def glob_files(directory: Path, extension: str) -> List[Path]:
     """Globs all '.extension' files recursively in a given directory"""
@@ -34,24 +37,16 @@ class CustomBuildExtCommand(build_ext):
 		print('Prebuild step')
 		if(source_dir.joinpath(pyd_name).exists()):
 			source_dir.joinpath(pyd_name).unlink()
-		if(source_dir.joinpath(pyd_d_name).exists()):
-			source_dir.joinpath(pyd_d_name).unlink()
 		
 		# Call the original build_ext command
 		build_ext.run(self)
 
 		# Post-build step
 		print('Postbuild step')
-		if is_debug:
-			src = extension_build_dir.joinpath(pyd_d_name)
-			dst = source_dir.joinpath(pyd_d_name)
-			print(f'copy: \n src: {src}\n dst: {dst}')
-			shutil.copy2(src, dst)
-		else:
-			src = extension_build_dir.joinpath(pyd_name)
-			dst = source_dir.joinpath(pyd_name)
-			print(f'copy: \n src: {src}\n dst: {dst}')
-			shutil.copy2(src, dst)
+		src = extension_build_dir.joinpath(pyd_name)
+		dst = source_dir.joinpath(pyd_name)
+		print(f'copy: \n src: {src}\n dst: {dst}')
+		shutil.copy2(src, dst)
 
 module = Extension(
 	module_name,
@@ -66,7 +61,7 @@ module = Extension(
         python_lib_dir
 	])),
     libraries = [
-        f'python312{"_d" if is_debug else ""}'
+        f'python312{"_d" if is_debug_build else ""}'
 	],
 	extra_compile_args = [
         '/std:c++20',
@@ -76,12 +71,6 @@ module = Extension(
 		'/DEBUG'
 	]
 )
-
-# If building with debug version of Python, '_d' is already appended.
-# If building with release version of Python,
-# but in debug configuration for this extension, still use '_d'. 
-if '--debug' in sys.argv and not sysconfig.get_config_var('Py_DEBUG'):
-	module.name += '_d'
 
 setup(
 	name        = module_name,
