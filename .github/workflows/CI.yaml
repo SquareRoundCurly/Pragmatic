@@ -4,15 +4,10 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
-    inputs:
-      use-self-hosted:
-        description: 'Use self-hosted runner?'
-        required: true
-        default: 'no'
 
 jobs:
   build:
-    runs-on: ${{ (github.event.inputs.use-self-hosted == 'yes') && 'self-hosted' || 'windows-latest' }}
+    runs-on: 'windows-latest'
 
     steps:
     - name: Checkout code
