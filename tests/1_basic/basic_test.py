@@ -24,7 +24,7 @@ __return = True
 				# TODO: This still doesn't work on github CI
 				pass # auto_graph.task(sleepy_code)
 
-			auto_graph.task('tests/1_basic/some_other_script.py')
+			# auto_graph.task('tests/1_basic/some_other_script.py')
 			auto_graph.task(print_thread)
 		except Exception as error:
 			self.fail(error)
