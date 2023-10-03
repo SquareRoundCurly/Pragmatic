@@ -70,3 +70,6 @@ if __name__ == "__main__":
 	# Run the tests
 	runner = DelayedTextTestRunner()
 	runner.run(suite)
+
+	print('Done running tests')
+	exit()
