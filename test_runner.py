@@ -2,6 +2,9 @@ import unittest
 import sys
 import os
 import glob
+from pathlib import Path
+
+print(f'Running tests in directory: {Path(__file__).parent}')
 
 def find_test_module(test_number, base_dir='tests'):
 	# Search for directories that match the pattern
