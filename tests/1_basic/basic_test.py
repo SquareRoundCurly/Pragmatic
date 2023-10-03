@@ -1,6 +1,7 @@
 import os
 import auto_graph
 import unittest
+from pathlib import Path
 
 def print_thread() -> bool:
 	import threading
@@ -24,7 +25,7 @@ __return = True
 				auto_graph.task(sleepy_code)
 
 			# TODO: This still doesn't work on github CI
-			# auto_graph.task('tests/1_basic/some_other_script.py')
-			auto_graph.task(print_thread)
+			path = Path(__file__).parent.joinpath('some_other_script.py')
+			auto_graph.task(str(path))
 		except Exception as error:
 			self.fail(error)
