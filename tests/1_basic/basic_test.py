@@ -25,7 +25,7 @@ __return = True
 				auto_graph.task(sleepy_code)
 
 			# TODO: This still doesn't work on github CI
-			path = Path(__file__).parent.joinpath('some_other_script.py')
-			auto_graph.task(str(path))
+			# path = Path(__file__).parent.joinpath('some_other_script.py')
+			# auto_graph.task(str(path))
 		except Exception as error:
 			self.fail(error)
