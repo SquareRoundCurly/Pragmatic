@@ -11,12 +11,22 @@
 		},
 		{
 			"label": "build extension DEBUG",
-			"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe",
-			"args": [
-				"auto_graph/setup.py",
-				"build_ext",
-				"--debug"
-			]
+			"windows": {
+				"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe",
+				"args": [
+					"auto_graph/setup.py",
+					"build_ext",
+					"--debug"
+				]
+			},
+			"linux": {
+				"command": "${workspaceFolder}/external/cpython/python",
+				"args": [
+					"auto_graph/setup.py",
+					"build_ext",
+					"--debug"
+				]
+			}
 		},
 		{
 			"label": "install extension DEBUG",
@@ -30,13 +40,19 @@
 		},
 		{
 			"label": "build python DEBUG",
-			"command": "${workspaceFolder}/external/cpython/PCbuild/build.bat",
-			"args": [
-				"-p",
-				"x64",
-				"-c",
-				"Debug"
-			]
+			"windows": {
+				"command": "${workspaceFolder}/external/cpython/PCbuild/build.bat",
+				"args": [
+					"-p",
+					"x64",
+					"-c",
+					"Debug"
+				],
+			},
+			"linux": {
+				"type": "shell",
+				"command": "cd external/cpython && make distclean && CFLAGS=-fPIC && LDFLAGS=-fPIC && ./configure --with-pydebug && make -j$(nproc)"
+			},
 		},
 		{
 			"label": "build python RELEASE",
@@ -49,20 +65,29 @@
 			]
 		},
 		{
-            "label": "Install pip & setuptools",
-            "type": "shell",
-            "command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe -m ensurepip --upgrade && ${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe -m pip install setuptools --upgrade",
-            "problemMatcher": [],
-			"options": {
-                "shell": {
-                    "executable": "cmd.exe",
-                    "args": ["/d", "/c"]
-                }
-            },
-            "presentation": {
-                "reveal": "always"
-            }
-        }
+			"label": "Install pip & setuptools",
+			"windows": {
+				"type": "shell",
+				"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe -m ensurepip --upgrade && ${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe -m pip install setuptools --upgrade",
+				"problemMatcher": [],
+				"options": {
+					"shell": {
+						"executable": "cmd.exe",
+						"args": ["/d", "/c"]
+					}
+				},
+			},
+			"linux": {
+				"command": "sh",
+				"args": [
+					"-c",
+					"${workspaceFolder}/external/cpython/python -m ensurepip --upgrade && ${workspaceFolder}/external/cpython/python -m pip install setuptools --upgrade",
+				]
+			},
+			"presentation": {
+				"reveal": "always"
+			}
+		}
 	],
 	"presentation": {
 		"echo": true,
