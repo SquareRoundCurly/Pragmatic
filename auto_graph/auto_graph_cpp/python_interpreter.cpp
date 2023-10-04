@@ -303,7 +303,7 @@ namespace SRC::auto_graph
 						}
 						else
 						{
-							throw std::exception("Tried to execute non callable python object!");
+							throw std::runtime_error("Tried to execute non callable python object!");
 						}
 
 						PyThreadState_Swap(oldState);

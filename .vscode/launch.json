@@ -8,7 +8,12 @@
 			"name": "Python: Current File",
 			"type": "python",
 			"request": "launch",
-			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python.exe",
+			"windows": {
+				"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python.exe",
+			},
+			"linux": {
+				"python": "${workspaceFolder}/external/cpython/python"
+			},
 			"program": "${file}",
 			"console": "integratedTerminal",
 			"justMyCode": true
@@ -30,7 +35,12 @@
 			"name": "Python auto_graph DEBUG",
 			"type": "python",
 			"request": "launch",
-			"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python_d.exe",
+			"windows": {
+				"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python_d.exe",
+			},
+			"linux": {
+				"python": "${workspaceFolder}/external/cpython/python"
+			},
 			"program": "${workspaceFolder}/run.py",
 			"console": "integratedTerminal",
 			"justMyCode": true,
@@ -49,11 +59,36 @@
 			}
 		},
 		{
+			"name": "(gdb) Attach",
+			"type": "cppdbg",
+			"request": "attach",
+			"program": "${workspaceFolder}/external/cpython/python",
+			"additionalSOLibSearchPath": "${workspaceFolder}/auto_graph",
+			"processId": "",
+			"MIMode": "gdb",
+			"setupCommands": [
+				{
+					"description": "Enable pretty-printing for gdb",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": true
+				}
+			]
+		},
+		{
+			"name": "Python C++ Debugger",
+			"type": "pythoncpp",
+			"request": "launch",
+			"pythonConfig": "custom",
+			"pythonLaunchName": "Python auto_graph DEBUG",
+			"cppConfig": "custom",
+			"cppAttachName": "(gdb) Attach"
+		},
+		{
 			"name": "auto_graph Debug",
 			"type": "pythoncpp",
 			"request": "launch",
 			"pythonLaunchName": "Python auto_graph DEBUG",
-			"cppAttachName": "C++ Attach",
+			"cppAttachName": "C++ Attach"
 		},
 		{
 			"name": "Python: run test_runner DEBUG",

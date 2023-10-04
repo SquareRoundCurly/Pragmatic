@@ -1,11 +1,8 @@
 {
-	"git.detectSubmodules": false,
-	"[yaml]": {
-		"editor.insertSpaces": true,
-		"editor.tabSize": 2
-	},
-	"python.terminal.activateEnvironment": false,
-	"C_Cpp.default.cppStandard": "gnu++20",
+	"git.detectSubmodules": false,                    // Don't show submodules in source control
+	"dotnet.defaultSolution": "disable",              // Disable C# stuff from submodules
+	"python.terminal.activateEnvironment": false,     // Set python environment manually
+	"C_Cpp.default.cppStandard": "gnu++20",           // Project uses C++20
 	"files.associations": {
 		"algorithm": "cpp",
 		"array": "cpp",

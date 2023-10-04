@@ -1,0 +1,19 @@
+{
+	"name": "Ubuntu Dev Container",
+	"onCreateCommand": ".devcontainer/setup.sh",
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.shell.linux": "/bin/bash",
+				"git.detectSubmodules": false
+			},
+			"extensions": [
+				"ms-vscode.cpptools",
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"benjamin-simmonds.pythoncpp-debug",
+				"mutantdino.resourcemonitor"
+			]
+		}
+	}
+}
