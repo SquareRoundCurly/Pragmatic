@@ -1,6 +1,5 @@
 {
 	"name": "Ubuntu Dev Container",
-	"image": "ubuntu:latest",
 	"onCreateCommand": ".devcontainer/setup.sh",
 	"customizations": {
 		"vscode": {
