@@ -1,7 +1,7 @@
 #!/bin/bash
 
-apt-get update
-apt-get install -y git python3
+sudo apt-get update
+sudo apt-get install -y git python3
 
 if [ -f "./.devcontainer/first-run-notice.txt" ]; then
 	sudo cp --force ./.devcontainer/first-run-notice.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt
