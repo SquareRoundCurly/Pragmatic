@@ -31,7 +31,8 @@ print(f'Building auto_graph_cpp on {"windows" if is_windows else "linux"} ...')
 print(f'Using {"debug" if is_debug_python else "release"} Python')
 print(f'Building {"debug" if is_debug_build else "release"} build')
 
-shutil.rmtree(build_dir)
+if build_dir.exists():
+	shutil.rmtree(build_dir)
 
 def glob_files(directory: Path, extension: str) -> List[Path]:
 	"""Globs all '.extension' files recursively in a given directory"""
