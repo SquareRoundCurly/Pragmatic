@@ -4,7 +4,8 @@
 	"customizations": {
 		"vscode": {
 			"settings": {
-				"terminal.integrated.shell.linux": "/bin/bash"
+				"terminal.integrated.shell.linux": "/bin/bash",
+				"git.detectSubmodules": false
 			},
 			"extensions": [
 				"ms-vscode.cpptools",
