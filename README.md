@@ -1,9 +1,9 @@
 <h1 style="display: inline">
   auto_graph :globe_with_meridians:
   <a href="https://github.com/SquareRoundCurly/auto_graph/actions/workflows/CI.yaml">
-    <img align="right" src="https://github.com/SquareRoundCurly/auto_graph/actions/workflows/CI.yaml/badge.svg" alt="CI status">
+    <img src="https://github.com/SquareRoundCurly/auto_graph/actions/workflows/CI.yaml/badge.svg" alt="CI status">
   </a>
-  <img align="right" alt="Lines" src="https://img.shields.io/badge/dynamic/json?label=Lines&query=$.LoC&url=https://raw.githubusercontent.com/SquareRoundCurly/auto_graph/main/.github/statistics.json">
+  <img alt="Lines" src="https://img.shields.io/badge/dynamic/json?label=Lines&query=$.LoC&url=https://raw.githubusercontent.com/SquareRoundCurly/auto_graph/main/.github/statistics.json">
 </h1>
 
 Welcome to `auto_graph`! This powerful C++ Python extension is designed to let you quickly and effectively build dependency graphs where nodes represent conditions and edges signify actions.
