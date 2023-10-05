@@ -257,6 +257,25 @@ namespace SRC::auto_graph
 		stack.push(source);
 	}
 
+	std::vector<Node> Graph::GetParents(const std::string& nodeName) const
+	{
+		std::vector<Node> parents;
+		for (const auto& pair : adjacency)
+		{
+			const Node& potentialParentNode = pair.first;
+			const std::vector<Edge>& edges = pair.second;
+			for (const Edge& edge : edges)
+			{
+				if (edge.target == nodeName)  // Assuming your Edge structure has a target member that is the name of the target node
+				{
+					parents.push_back(potentialParentNode);
+					break;  // Move on to the next node in the adjacency list
+				}
+			}
+		}
+		return parents;
+	}
+
 	#pragma region Python
 
 	typedef struct PyGraph

@@ -53,6 +53,8 @@ namespace SRC::auto_graph
 		std::vector<std::vector<Node>> GetGenerations();
 		void PrintGenerations();
 
+		std::vector<Node> GetParents(const std::string& nodeName) const;
+
 		private: // Internal functions
 		void TopologicalSortUtil(const Node& source, std::unordered_map<Node, bool>& visited, std::stack<Node>& stack);
 	};

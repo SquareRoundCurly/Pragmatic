@@ -24,7 +24,13 @@ def compile(source: auto_graph.Node, target: auto_graph.Node):
 	return True
 
 def link(source: auto_graph.Node, target: auto_graph.Node):
-	print(f'Linking: {source.get_name()} -> {target.get_name()}')
+	parents = source.get_parents()
+	parent_names = []
+	for parent in parents:
+		parent_names.append(parent.get_name())
+
+	print(f'Linking: {" ".join(parent_names)} -> {target.get_name()}')
+
 	return True
 
 class NodesTest(unittest.TestCase):
@@ -32,8 +38,12 @@ class NodesTest(unittest.TestCase):
 		g = auto_graph.Graph()
 
 		g.add_edge('Main.cpp', 'Main.obj', compile)
-		g.add_edge('SomeClass.cpp', 'main.obj', compile)
-		g.add_edge('Main.obj', 'SomeClass.obj', link)
+		g.add_edge('SomeClass.cpp', 'SomeClass.obj', compile)
+		
+		g.add_edge('Main.obj', 'OBJs',)
+		g.add_edge('SomeClass.obj', 'OBJs')
+
+		g.add_edge('OBJs', 'Program.exe', link)
 
 		success = g.exec()
 

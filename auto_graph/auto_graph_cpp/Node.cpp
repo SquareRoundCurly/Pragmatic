@@ -85,11 +85,50 @@ namespace SRC::auto_graph
 		}
 	}
 
+	static PyObject* PyNode_GetParents(PyNode* self)
+	{
+		if (!self->graph)
+		{
+			PyErr_SetString(PyExc_RuntimeError, "Node object not initialized");
+			Py_RETURN_NONE;
+		}
+
+		// Get parent nodes
+		auto parents = self->graph->GetParents(self->GetNode().name);
+
+		// Create a new Python list of the appropriate size.
+		PyObject* pyParentList = PyList_New(parents.size());
+		if (!pyParentList)
+			return nullptr;  // Out of memory
+
+		// Get PyNodes
+		std::vector<PyObject*> pyNodes;
+		int index = 0;
+		for (auto parent : parents)
+		{
+			// Lookup the PyNode in the pyNodes map.
+			PyObject* pyParentNode = self->graph->pyNodes[parent.name];
+			if (!pyParentNode)
+			{
+				Py_DECREF(pyParentList);
+				return nullptr;  // Couldn't find corresponding PyNode
+			}
+
+			Py_INCREF(pyParentNode);                           // Increase the ref count as we're adding it to a new container
+			PyList_SetItem(pyParentList, index, pyParentNode); // SetItem "steals" a reference, so no need to DECREF here
+
+			index++;
+		}
+		
+		return pyParentList;
+	}
+
 	static PyMethodDef PyNode_methods[] =
 	{
 		{ "get_name", (PyCFunction)PyNode_GetName, METH_NOARGS, "Sorts the graph into topological generations & prints them" },
 		{ "__exec", (PyCFunction)PyNode_Exec, METH_NOARGS, "Runs the stored task functor"},
 		{ "get_result", (PyCFunction)PyNode_GetTaskResult, METH_NOARGS, "A blocking call that waits for the task result & returns it" },
+		{ "get_parents", (PyCFunction)PyNode_GetParents, METH_NOARGS, "Returns a list of parent nodes" },
 		{ nullptr }  // sentinel
 	};
 
