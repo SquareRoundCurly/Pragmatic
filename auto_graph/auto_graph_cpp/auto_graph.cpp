@@ -1,6 +1,9 @@
 // Standard library
 #include <iostream>
 #include <thread>
+#include <iostream>
+#include <cstdio>
+#include <array>
 #include <chrono>
 using namespace std::chrono_literals;
 
@@ -139,11 +142,65 @@ static PyObject* cleanup(PyObject* self, PyObject* args)
 	PROFILE_FUNCTION();
 
 	SRC::auto_graph::Cleanup();
-	std::cout << "Cleaned up auto_graph" << std::endl;
+	SRC::auto_graph::Out() << "Cleaned up auto_graph" << std::endl;
 	
 	PROFILE_END_SESSION();
 
 	Py_RETURN_NONE;
+}
+
+std::string exec(const char* cmd)
+{
+	std::array<char, 128> buffer;
+	std::string result;
+	
+	#ifdef _WIN32
+        FILE* pipe = _popen(cmd, "r");
+    #else
+        FILE* pipe = popen(cmd, "r");
+    #endif
+
+	if (!pipe) throw std::runtime_error("popen() failed!");
+	try
+	{
+		while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
+		{
+			result += buffer.data();
+		}
+	}
+	catch (...)
+	{
+		#ifdef _WIN32
+            _pclose(pipe);
+        #else
+            pclose(pipe);
+        #endif
+		throw;
+	}
+
+	#ifdef _WIN32
+        _pclose(pipe);
+    #else
+        pclose(pipe);
+    #endif
+
+	return result;
+}
+
+static PyObject* run_command(PyObject* self, PyObject* args)
+{
+	const char* str;
+
+	// Get a string for the command and an optional string for the cwd
+	if (!PyArg_ParseTuple(args, "s", &str))
+	{
+		PyErr_SetString(PyExc_TypeError, "first parameter must be a string cmd, second parameter (optional) must be a string for cwd");
+		return NULL;
+	}
+	
+	auto output = exec(str);
+
+	return PyUnicode_FromString(output.c_str());
 }
 
 static PyObject* print(PyObject* self, PyObject* args)
@@ -152,10 +209,10 @@ static PyObject* print(PyObject* self, PyObject* args)
 
 	const char* str;
 	if (!PyArg_ParseTuple(args, "s", &str)) // Get a string
-    {
-        PyErr_SetString(PyExc_TypeError, "parameter must be a string");
-        return NULL;
-    }
+	{
+		PyErr_SetString(PyExc_TypeError, "parameter must be a string");
+		return NULL;
+	}
 
 	SRC::auto_graph::Out() << str << std::endl;
 
@@ -207,6 +264,7 @@ static PyMethodDef methods[] =
 	{ "cleanup", cleanup, METH_NOARGS, "Cleanup function to be called before exit" },
 	{ "print", print, METH_VARARGS, "A thread safe print function"},
 	{ "testGraph", testGraph, METH_NOARGS, "test function" },
+	{ "run_command", run_command, METH_VARARGS, "Runs a string shell command" },
 	{ NULL, NULL, 0, NULL }
 };
 

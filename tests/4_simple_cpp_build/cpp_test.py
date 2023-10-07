@@ -1,6 +1,9 @@
 import auto_graph
 import unittest
 import subprocess
+from pathlib import Path
+
+src_dir = "tests\\4_simple_cpp_build\\src\\"
 
 def run_shell_command(command: str):
 	try:
@@ -20,16 +23,18 @@ def run_shell_command(command: str):
 run_shell_command('clang --version')
 
 def compile(source: auto_graph.Node, target: auto_graph.Node):
-	print(f'Compiling: {source.get_name()} -> {target.get_name()}')
+	output = auto_graph.run_command(f'clang++ -c {src_dir}{source.get_name()} -o {src_dir}{target.get_name()}')
+	print(f'Compiling: {source.get_name()} -> {target.get_name()}\n{output}')
 	return True
 
 def link(source: auto_graph.Node, target: auto_graph.Node):
 	parents = source.get_parents()
 	parent_names = []
 	for parent in parents:
-		parent_names.append(parent.get_name())
+		parent_names.append(src_dir + parent.get_name())
 
-	print(f'Linking: {" ".join(parent_names)} -> {target.get_name()}')
+	output = auto_graph.run_command(f'clang++ -fuse-ld=lld {" ".join(parent_names)} -o {src_dir}{target.get_name()}')
+	print(f'Linking: {" ".join(parent_names)} -> {src_dir}{target.get_name()}\n{output}')
 
 	return True
 
@@ -48,3 +53,8 @@ class NodesTest(unittest.TestCase):
 		success = g.exec()
 
 		auto_graph.print(f'graph build {"succeeded" if success else "failed"}')
+
+		self.assertEqual(success, True)
+
+		output = auto_graph.run_command(f'{src_dir}Program.exe')
+		self.assertEqual(output, 'Hello world !\n')

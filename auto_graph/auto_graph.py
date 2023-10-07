@@ -19,5 +19,7 @@ def cleanup():
 def print(msg: str):
 	auto_graph_cpp.print(msg)
 
-def testGraph():
-	auto_graph_cpp.testGraph()
+def run_command(cmd: str):
+	_ = auto_graph_cpp.ScopeTimer('run_command')
+	output = auto_graph_cpp.run_command(cmd)
+	return output
