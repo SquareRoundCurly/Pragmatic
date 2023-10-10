@@ -151,6 +151,8 @@ static PyObject* cleanup(PyObject* self, PyObject* args)
 
 std::string exec(const char* cmd)
 {
+	PROFILE_FUNCTION();
+
 	std::array<char, 128> buffer;
 	std::string result;
 	
@@ -189,6 +191,8 @@ std::string exec(const char* cmd)
 
 static PyObject* run_command(PyObject* self, PyObject* args)
 {
+	PROFILE_FUNCTION();
+	
 	const char* str;
 
 	// Get a string for the command and an optional string for the cwd

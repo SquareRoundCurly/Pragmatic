@@ -145,10 +145,11 @@ namespace SRC::auto_graph
 		return generations;
 	}
 
-	bool Graph::ExecuteGraph()
+	GraphExecResult Graph::ExecuteGraph()
 	{
 		auto generations = NEW_GetGenerations();
 		std::vector<std::shared_future<bool>> futures;
+		GraphExecResult result;
 
 		for (const auto& generation : generations)
 		{
@@ -164,7 +165,8 @@ namespace SRC::auto_graph
 				else
 				{
 					SRC::auto_graph::AddTask(node.task);
-					nodeValue = node.task.result->get_future().get();
+					nodeValue = node.task.result->get_future().get(); // TODO: defer node results per generation
+					result.nodesVisited++;
 				}
 
 				// Handle edges
@@ -178,6 +180,7 @@ namespace SRC::auto_graph
 						{
 							SRC::auto_graph::AddTask(edge.task);
 							futures.push_back(edge.task.result->get_future());
+							result.tasksRun++;
 						}
 					}
 				}
@@ -187,10 +190,14 @@ namespace SRC::auto_graph
 		// Wait for the results and handle them
 		for (auto& future : futures)
 		{
-			if (!future.get()) return false;
+			if (!future.get())
+			{
+				result.success = false;
+				break;
+			}
 		}
 
-		return true; // All edges' exec returned true
+		return result; // All edges' exec returned true
 	}
 
 	std::vector<std::vector<Node>> Graph::GetGenerations()
@@ -533,6 +540,39 @@ namespace SRC::auto_graph
 		return pyGenerations;
 	}
 
+	PyObject* GraphExecResult_To_PyDict(const GraphExecResult& result)
+	{
+		PyObject* pyDict = PyDict_New();
+		if (!pyDict) return NULL;
+
+		// Convert struct members to Python objects and set them in the dictionary.
+		PyObject* pySuccess = PyBool_FromLong(result.success);
+		PyObject* pyNodesVisited = PyLong_FromUnsignedLong(result.nodesVisited);
+		PyObject* pyTasksRun = PyLong_FromUnsignedLong(result.tasksRun);
+
+		// Check for any conversion errors.
+		if (!pySuccess || !pyNodesVisited || !pyTasksRun)
+		{
+			Py_XDECREF(pySuccess);
+			Py_XDECREF(pyNodesVisited);
+			Py_XDECREF(pyTasksRun);
+			Py_DECREF(pyDict);
+			return NULL;
+		}
+
+		// Set dictionary items.
+		PyDict_SetItemString(pyDict, "success", pySuccess);
+		PyDict_SetItemString(pyDict, "nodesVisited", pyNodesVisited);
+		PyDict_SetItemString(pyDict, "tasksRun", pyTasksRun);
+
+		// DECREF the temporary Python objects as the dictionary now owns them.
+		Py_DECREF(pySuccess);
+		Py_DECREF(pyNodesVisited);
+		Py_DECREF(pyTasksRun);
+
+		return pyDict;
+	}
+
 	static PyObject* PyGraph_ExecuteGraph(PyGraph* self, PyObject* args)
 	{
 		if (!self->graph)
@@ -541,9 +581,9 @@ namespace SRC::auto_graph
 			return nullptr;
 		}
 
-		bool success = self->graph->ExecuteGraph();
+		GraphExecResult success = self->graph->ExecuteGraph();
 
-		return PyBool_FromLong(success);
+		return GraphExecResult_To_PyDict(success);
 	}
 
 	static PyMethodDef PyGraph_methods[] =

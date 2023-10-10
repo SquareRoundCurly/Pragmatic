@@ -17,14 +17,21 @@ typedef struct _object PyObject;
 
 namespace SRC::auto_graph
 {
-		struct TupleHash
-		{
+	struct TupleHash
+	{
 		size_t operator()(const std::tuple<std::string, std::string>& key) const
 		{
 			auto h1 = std::hash<std::string>{}(std::get<0>(key));
 			auto h2 = std::hash<std::string>{}(std::get<1>(key));
 			return h1 ^ h2;
 		}
+	};
+
+	struct GraphExecResult
+	{
+		bool success = true;
+		unsigned int nodesVisited = 0;
+		unsigned int tasksRun = 0;
 	};
 
 	class Graph
@@ -49,7 +56,7 @@ namespace SRC::auto_graph
 		public: // Sort
 		void TopologicalSort();
 		std::vector<std::vector<std::pair<Node, std::vector<Edge>>>> NEW_GetGenerations();
-		bool ExecuteGraph();
+		GraphExecResult ExecuteGraph();
 		std::vector<std::vector<Node>> GetGenerations();
 		void PrintGenerations();
 

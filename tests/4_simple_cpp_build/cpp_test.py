@@ -50,11 +50,12 @@ class NodesTest(unittest.TestCase):
 
 		g.add_edge('OBJs', 'Program.exe', link)
 
-		success = g.exec()
+		result = g.exec()
 
-		auto_graph.print(f'graph build {"succeeded" if success else "failed"}')
+		auto_graph.print(f'graph build {"succeeded" if result["success"] else "failed"}')
+		auto_graph.print(f'graph checked {result["nodesVisited"]} nodes and ran {result["tasksRun"]} tasks')
 
-		self.assertEqual(success, True)
+		self.assertEqual(result["success"], True)
 
 		output = auto_graph.run_command(f'{src_dir}Program.exe')
 		self.assertEqual(output, 'Hello world !\n')
