@@ -68,7 +68,7 @@
 			"label": "Install pip & setuptools",
 			"windows": {
 				"type": "shell",
-				"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe -m ensurepip --upgrade && ${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe -m pip install setuptools --upgrade",
+				"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe -m ensurepip --upgrade && ${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe -m pip install setuptools --upgrade",
 				"problemMatcher": [],
 				"options": {
 					"shell": {

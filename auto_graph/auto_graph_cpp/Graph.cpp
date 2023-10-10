@@ -148,6 +148,7 @@ namespace SRC::auto_graph
 	bool Graph::ExecuteGraph()
 	{
 		auto generations = NEW_GetGenerations();
+		std::vector<std::shared_future<bool>> futures;
 
 		for (const auto& generation : generations)
 		{
@@ -176,13 +177,19 @@ namespace SRC::auto_graph
 						else
 						{
 							SRC::auto_graph::AddTask(edge.task);
-							if (!edge.task.result->get_future().get())
-								return false; // Stop execution if any edge's exec returns false
+							futures.push_back(edge.task.result->get_future());
 						}
 					}
 				}
 			}
 		}
+
+		// Wait for the results and handle them
+		for (auto& future : futures)
+		{
+			if (!future.get()) return false;
+		}
+
 		return true; // All edges' exec returned true
 	}
 
