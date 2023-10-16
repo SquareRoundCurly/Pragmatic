@@ -30,6 +30,8 @@ namespace
 
 	CodeType ClassifyCode(const std::string& code)
 	{
+		PROFILE_FUNCTION();
+
 		PyObject* astModule = PyImport_ImportModule("ast");
 		if (astModule == nullptr)
 		{
@@ -103,7 +105,8 @@ namespace
 
 	PyObject* GetArtificialReturnValue(PyObject* result, PyObject* globalDict)
 	{
-		
+		PROFILE_FUNCTION();
+
 		if (result != nullptr)
 		{
 			PyObject* returnValue = PyDict_GetItemString(globalDict, "__return");
@@ -123,6 +126,8 @@ namespace
 
 	size_t GetNumberOfArgs(PyObject* callable)
 	{
+		PROFILE_FUNCTION();
+		
 		size_t paramCount = 0;
 		
 		PyObject* codeObj = PyObject_GetAttrString(callable, "__code__");
@@ -146,27 +151,39 @@ namespace SRC::auto_graph
 {
 	void AddTask(const PythonTask& pythonTask)
 	{
+		PROFILE_FUNCTION();
+
 		auto task = pythonTask.task;
 		if (std::holds_alternative<std::monostate>(task))
 			throw std::runtime_error("Tried to execute empty task");
 
+		static size_t lastInterpreterIdx = 0; // Start with the first interpreter initially
 		size_t lowest = LLONG_MAX;
 		Subinterpreter* idleInterpreter = nullptr;
 
-		for (auto& interpreter : interpreters)
+		// Use a loop to iterate over all interpreters, starting from the lastInterpreterIdx.
+		for (size_t i = 0; i < interpreters.size(); ++i)
 		{
-			if (interpreter->GetSize() <= lowest)
+			size_t idx = (lastInterpreterIdx + i) % interpreters.size();
+			Subinterpreter* current = interpreters[idx];
+
+			if (current->GetSize() <= lowest)
 			{
-				idleInterpreter = interpreter;
-				lowest = interpreter->GetSize();
+				idleInterpreter = current;
+				lowest = current->GetSize();
 			}
 		}
+
+		// Increment the lastInterpreterIdx for next time, and wrap around if necessary.
+		lastInterpreterIdx = (lastInterpreterIdx + 1) % interpreters.size();
 
 		idleInterpreter->Enque(pythonTask);
 	}
 
 	void Initialize()
 	{
+		PROFILE_FUNCTION();
+
 		auto concurrency = std::thread::hardware_concurrency();
 		Out() << "Creating " << concurrency << " subinterpreters" << std::endl;
 		for (size_t i = 0; i < concurrency; i++)
@@ -177,6 +194,8 @@ namespace SRC::auto_graph
 
 	void Cleanup()
 	{
+		PROFILE_FUNCTION();
+
 		for (auto* interpreter : interpreters)
 		{
 			delete interpreter;
@@ -351,7 +370,6 @@ namespace SRC::auto_graph
 	Subinterpreter::~Subinterpreter()
 	{
 		PROFILE_FUNCTION();
-
 		
 		{
 			PROFILE_SCOPE("Waiting for tasks to finish");

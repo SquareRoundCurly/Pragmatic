@@ -50,6 +50,8 @@ class NodesTest(unittest.TestCase):
 
 		g.add_edge('OBJs', 'Program.exe', link)
 
+		g.print_topological_generations()
+
 		result = g.exec()
 
 		auto_graph.print(f'graph build {"succeeded" if result["success"] else "failed"}')

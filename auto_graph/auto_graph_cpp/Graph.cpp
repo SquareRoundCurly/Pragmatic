@@ -148,52 +148,69 @@ namespace SRC::auto_graph
 	GraphExecResult Graph::ExecuteGraph()
 	{
 		auto generations = NEW_GetGenerations();
-		std::vector<std::shared_future<bool>> futures;
 		GraphExecResult result;
 
 		for (const auto& generation : generations)
 		{
+			std::vector<std::shared_future<bool>> nodeFutures;
+			std::vector<std::shared_future<bool>> edgeFutures;
+
+			// Schedule node tasks and gather futures
 			for (const auto& pair : generation)
 			{
 				const Node& node = pair.first;
-				const std::vector<Edge>& edges = pair.second;
 
-				// Handle node task
-				bool nodeValue = false;
-				if (std::holds_alternative<std::monostate>(node.task.task))
-					nodeValue = true;
-				else
+				if (!std::holds_alternative<std::monostate>(node.task.task))
 				{
 					SRC::auto_graph::AddTask(node.task);
-					nodeValue = node.task.result->get_future().get(); // TODO: defer node results per generation
+					nodeFutures.push_back(node.task.result->get_future());
 					result.nodesVisited++;
 				}
+				else
+				{
+					// For monostate, add a ready future with value true
+					std::promise<bool> readyPromise;
+					readyPromise.set_value(true);
+					nodeFutures.push_back(readyPromise.get_future());
+				}
+			}
 
-				// Handle edges
-				if (nodeValue)
+			// Wait for node results for the current generation
+			std::vector<bool> nodeResults;
+			for (auto& future : nodeFutures)
+			{
+				nodeResults.push_back(future.get());
+			}
+
+			// Process edge tasks based on node results
+			int idx = 0;
+			for (const auto& pair : generation)
+			{
+				const std::vector<Edge>& edges = pair.second;
+
+				if (nodeResults[idx])
 				{
 					for (const Edge& edge : edges)
 					{
-						if (std::holds_alternative<std::monostate>(edge.task.task))
-							nodeValue = true;
-						else
+						if (!std::holds_alternative<std::monostate>(edge.task.task))
 						{
 							SRC::auto_graph::AddTask(edge.task);
-							futures.push_back(edge.task.result->get_future());
+							edgeFutures.push_back(edge.task.result->get_future());
 							result.tasksRun++;
 						}
 					}
 				}
+				idx++;
 			}
-		}
 
-		// Wait for the results and handle them
-		for (auto& future : futures)
-		{
-			if (!future.get())
+			// Handle edge results for the current generation
+			for (auto& future : edgeFutures)
 			{
-				result.success = false;
-				break;
+				if (!future.get())
+				{
+					result.success = false;
+					return result; // Exit early if any edge task returns false
+				}
 			}
 		}
 
