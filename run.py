@@ -4,17 +4,7 @@ sys.path.append(str(Path(__file__).parent.absolute()))
 
 import auto_graph
 
-sleepy_code = """
-import threading
-import time
-
-time.sleep(0.1)
-print(f"Running on thread {threading.get_ident()}")
-
-__return = True
-"""
-
-
-for i in range(20):
-	# auto_graph.task('__return = True')
-	auto_graph.task(sleepy_code)
+hash = auto_graph.hash_utils.calculate_hash('tests/4_simple_cpp_build/src/Main.cpp')
+print(hash)
+auto_graph.hash_utils.store_hash_in_json('tests/4_simple_cpp_build/src/Main.cpp', 'temp.json')
+print(f'Is same: {auto_graph.hash_utils.verify_file_hash("tests/4_simple_cpp_build/src/Main.cpp", "temp.json")}')

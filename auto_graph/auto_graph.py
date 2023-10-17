@@ -1,7 +1,6 @@
-
 from . import auto_graph_cpp
-import atexit
 
+import atexit
 atexit.register(auto_graph_cpp.cleanup)
 
 def initialize():
