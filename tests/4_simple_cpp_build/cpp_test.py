@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 
 src_dir = "tests\\4_simple_cpp_build\\src\\"
+json_file = 'tests\\4_simple_cpp_build\\src\\hashes.json'
 
 def run_shell_command(command: str):
 	try:
@@ -18,13 +19,13 @@ def run_shell_command(command: str):
 			print(result.stderr)
 		
 	except Exception as e:
-		print(f"Failed to run command. Error: {e}")
+		auto_graph.print(f"Failed to run command. Error: {e}")
 
 run_shell_command('clang --version')
 
 def compile(source: auto_graph.Node, target: auto_graph.Node):
 	output = auto_graph.run_command(f'clang++ -c {src_dir}{source.get_name()} -o {src_dir}{target.get_name()}')
-	print(f'Compiling: {source.get_name()} -> {target.get_name()}\n{output}')
+	auto_graph.print(f'Compiling: {source.get_name()} -> {target.get_name()}\n{output}')
 	return True
 
 def link(source: auto_graph.Node, target: auto_graph.Node):
@@ -34,13 +35,30 @@ def link(source: auto_graph.Node, target: auto_graph.Node):
 		parent_names.append(src_dir + parent.get_name())
 
 	output = auto_graph.run_command(f'clang++ -fuse-ld=lld {" ".join(parent_names)} -o {src_dir}{target.get_name()}')
-	print(f'Linking: {" ".join(parent_names)} -> {src_dir}{target.get_name()}\n{output}')
+	auto_graph.print(f'Linking: {" ".join(parent_names)} -> {src_dir}{target.get_name()}\n{output}')
 
 	return True
+
+def check_hash(source: auto_graph.Node) -> bool:
+	# file = f'{src_dir}{source.get_name()}'
+
+	# auto_graph.print(f'{file}')
+
+	return False
+	# is_valid = auto_graph.hash_utils.verify_file_hash(file, json_file)
+	# if not is_valid:
+	# 	auto_graph.hash_utils.store_hash_in_json(file, json_file)
+	# return not is_valid
 
 class NodesTest(unittest.TestCase):
 	def test_0_node_references(self):
 		g = auto_graph.Graph()
+
+		g.add_node('Main.cpp', check_hash)
+		g.add_node('Main.obj', check_hash)
+		g.add_node('SomeClass.cpp', check_hash)
+		g.add_node('SomeClass.obj', check_hash)
+		g.add_node('Program.exe', check_hash)
 
 		g.add_edge('Main.cpp', 'Main.obj', compile)
 		g.add_edge('SomeClass.cpp', 'SomeClass.obj', compile)
