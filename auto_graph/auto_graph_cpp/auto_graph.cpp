@@ -223,51 +223,12 @@ static PyObject* print(PyObject* self, PyObject* args)
 	Py_RETURN_NONE;
 }
 
-static PyObject* testGraph(PyObject* self, PyObject* args)
-{
-	PROFILE_FUNCTION();
-
-	using namespace SRC::auto_graph;
-
-	Graph g;
-    
-    Node A { "A" };
-    Node B { "B" };
-    Node C { "C" };
-    Node D { "D" };
-    Node E { "E" };
-    Node F { "F" };
-    Node G { "G" };
-    Node H { "H" };
-    Node I { "I" };
-    Node J { "J" };
-
-    g.AddEdge(A, B, Edge { A, B });
-    g.AddEdge(A, C, Edge { A, C });
-    g.AddEdge(B, D, Edge { B, D });
-    g.AddEdge(C, E, Edge { C, E });
-    g.AddEdge(D, F, Edge { D, F });
-    g.AddEdge(E, F, Edge { E, F });
-    g.AddEdge(F, G, Edge { F, G });
-    g.AddEdge(F, H, Edge { F, H });
-    g.AddEdge(C, I, Edge { C, I });
-    g.AddEdge(I, J, Edge { I, J });
-
-    std::cout << "Topological Sort of the given graph:\n";
-    g.TopologicalSort();
-
-	g.PrintGenerations();
-
-	Py_RETURN_NONE;
-}
-
 static PyMethodDef methods[] =
 {
 	{ "initialize", initialize, METH_NOARGS, "Initializes auto_graph_cpp & subinterpreters." },
 	{ "task", task, METH_VARARGS, "Python files, strings or functions to add to the executor pool" },
 	{ "cleanup", cleanup, METH_NOARGS, "Cleanup function to be called before exit" },
 	{ "print", print, METH_VARARGS, "A thread safe print function"},
-	{ "testGraph", testGraph, METH_NOARGS, "test function" },
 	{ "run_command", run_command, METH_VARARGS, "Runs a string shell command" },
 	{ NULL, NULL, 0, NULL }
 };
@@ -296,6 +257,20 @@ static PyModuleDef_Slot slots[] =
     { 0, NULL }
 };
 
+static int auto_graph_traverse(PyObject* module, visitproc visit, void* arg)
+{
+    module_state* state = (module_state*)PyModule_GetState(module);
+    Py_VISIT(state->an_object);
+    return 0;
+}
+
+static int auto_graph_clear(PyObject* module)
+{
+    module_state* state = (module_state*)PyModule_GetState(module);
+    Py_CLEAR(state->an_object);
+    return 0;
+}
+
 void ModuleFree(void* module)
 {
 	std::cout << "Module freed" << std::endl;
@@ -309,8 +284,8 @@ static struct PyModuleDef module =
     sizeof(module_state),  // size of per-interpreter state of the module
     methods,
     slots,
-    NULL,                  // m_traverse
-    NULL,                  // m_clear
+    auto_graph_traverse,   // m_traverse
+    auto_graph_clear,      // m_clear
     ModuleFree,            // m_free
 };
 
