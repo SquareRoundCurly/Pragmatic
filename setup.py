@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import shutil
 from typing import List
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, Extension, find_namespace_packages
 from setuptools.command.build_ext import build_ext
 
 is_windows = sys.platform == "win32"
@@ -83,17 +83,18 @@ auto_graph_cpp = Extension(
 	library_dirs = list(map(str, [
 		python_lib_dir
 	])),
-	libraries = [f'python312{"_d" if is_debug_build else ""}'] if is_windows else [] # [f'python3.12{"d" if is_debug_build else ""}']
+	libraries = [f'python312{"_d" if is_debug_build else ""}'] if is_windows else []
 	,
 	extra_compile_args = compile_args(),
 	extra_link_args = ['/DEBUG'] if is_windows else []
 )
 
 setup(
-	name        = 'auto-graph',
-	version     = '0.1',
-	description = 'C++ accelerated parts of auto_graph',
-	packages    = find_packages(),
-	ext_modules = [auto_graph_cpp],
-	cmdclass    = { 'build_ext': CustomBuildExtCommand }
+	name         = 'pragmatic',
+	version      = '0.2',
+	description  = 'C++ accelerated parts of auto_graph',
+	packages     = ['auto_graph', 'auto_graph_cpp'],
+	ext_modules  = [auto_graph_cpp],
+	package_data = { 'auto_graph.__private': ['*.pyd'] },
+	cmdclass     = { 'build_ext': CustomBuildExtCommand }
 )

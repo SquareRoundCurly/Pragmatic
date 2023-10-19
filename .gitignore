@@ -2,5 +2,5 @@ build
 dist
 *.json
 vc140.pdb
-auto_graph.egg-info
+*.egg-info
 testenv
