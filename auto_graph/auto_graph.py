@@ -1,5 +1,5 @@
 # Imports
-from . import auto_graph_cpp
+from .__private import auto_graph_cpp
 import importlib
 
 # At exit callback

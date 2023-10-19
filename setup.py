@@ -11,15 +11,16 @@ is_linux = sys.platform == "linux"
 is_debug_build = '--debug' in sys.argv
 is_debug_python = hasattr(sys, 'gettotalrefcount')
 
-project_dir         = Path(__file__).parent
-auto_graph_dir      = project_dir.joinpath('auto_graph')
-auto_graph_cpp_dir  = project_dir.joinpath('auto_graph_cpp')
-build_dir           = project_dir.joinpath('build')
-extension_build_dir = build_dir.joinpath(f'{"lib.win-amd64" if is_windows else "lib.linux-x86_64"}-cpython-312{"-pydebug" if is_debug_python else ""}')
-external_dir        = project_dir.joinpath('external')
-python_dir          = external_dir.joinpath('cpython')
-python_include_dir  = python_dir.joinpath('Include')
-python_lib_dir      = python_dir.joinpath('PCbuild/amd64') if is_windows else python_dir
+project_dir            = Path(__file__).parent
+auto_graph_dir         = project_dir.joinpath('auto_graph')
+auto_graph_private_dir = auto_graph_dir.joinpath('__private')
+auto_graph_cpp_dir     = project_dir.joinpath('auto_graph_cpp')
+build_dir              = project_dir.joinpath('build')
+extension_build_dir    = build_dir.joinpath(f'{"lib.win-amd64" if is_windows else "lib.linux-x86_64"}-cpython-312{"-pydebug" if is_debug_python else ""}')
+external_dir           = project_dir.joinpath('external')
+python_dir             = external_dir.joinpath('cpython')
+python_include_dir     = python_dir.joinpath('Include')
+python_lib_dir         = python_dir.joinpath('PCbuild/amd64') if is_windows else python_dir
 
 # If building with debug version of Python, '_d' is already appended.
 # If building with release version of Python,
@@ -53,7 +54,7 @@ class CustomBuildExtCommand(build_ext):
 		# Post-build step
 		print('Postbuild step')
 		src = extension_build_dir.joinpath(pyd_name)
-		dst = auto_graph_dir.joinpath(pyd_name)
+		dst = auto_graph_private_dir.joinpath(pyd_name)
 		print(f'copy: \n src: {src}\n dst: {dst}')
 		shutil.copy2(src, dst)
 
