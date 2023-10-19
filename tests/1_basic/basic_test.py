@@ -1,31 +1,40 @@
-import os
-import auto_graph
 import unittest
-from pathlib import Path
+import importlib
+from multiprocessing import Process
 
-def print_thread() -> bool:
-	import threading
-	auto_graph.print(f"print_thread function running on thread {threading.get_ident()}")
-	return True
+def reimport_test_func():
+	import sys
+	from pathlib import Path
+	sys.path.append(str(Path(__file__).parent.parent.parent.absolute()))
+	import auto_graph
+
+	auto_graph.print('1')
+
+	importlib.reload(auto_graph)
+
+	auto_graph.print('2')
+
+	import sys
+	if 'auto_graph' in sys.modules:
+		del sys.modules['auto_graph']
+	import auto_graph
+
+	auto_graph.print('3')
 
 class BasicTest(unittest.TestCase):
-	def test_0_build(self):
-		sleepy_code = """
-import threading
-import time
+	def test_0_imports(self):
+		processes = []
 
-time.sleep(0.1)
-print(f"Running on thread {threading.get_ident()}")
+		# Start 5 subprocesses
+		for _ in range(5):
+			p = Process(target=reimport_test_func)
+			p.start()
+			processes.append(p)
 
-__return = True
-"""
+		# Wait for all subprocesses to finish
+		for p in processes:
+			p.join()
 
-		try:
-			for i in range(20):
-				auto_graph.task(sleepy_code)
-
-			# TODO: This still doesn't work on github CI
-			# path = Path(__file__).parent.joinpath('some_other_script.py')
-			# auto_graph.task(str(path))
-		except Exception as error:
-			self.fail(error)
+		# Check exit codes
+		for p in processes:
+			self.assertEqual(p.exitcode, 0, "A subprocess terminated with an error")
