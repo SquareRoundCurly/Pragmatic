@@ -16,7 +16,7 @@ auto_graph_dir         = project_dir.joinpath('auto_graph')
 auto_graph_private_dir = auto_graph_dir.joinpath('__private')
 auto_graph_cpp_dir     = project_dir.joinpath('auto_graph_cpp')
 build_dir              = project_dir.joinpath('build')
-extension_build_dir    = build_dir.joinpath(f'{"lib.win-amd64" if is_windows else "lib.linux-x86_64"}-cpython-312{"-pydebug" if is_debug_python else ""}')
+extension_build_dir    = build_dir.joinpath(f'{"lib.win-amd64" if is_windows else "lib.linux-x86_64"}-cpython-312{"-pydebug" if is_debug_python else ""}').joinpath('auto_graph').joinpath('__private')
 external_dir           = project_dir.joinpath('external')
 python_dir             = external_dir.joinpath('cpython')
 python_include_dir     = python_dir.joinpath('Include')
@@ -72,7 +72,7 @@ def compile_args():
 		]
 
 auto_graph_cpp = Extension(
-	module_name,
+	f'auto_graph.__private.auto_graph_cpp',
 	sources = glob_files(auto_graph_cpp_dir, 'cpp'),
 	depends = glob_files(auto_graph_cpp_dir, 'hpp'),
 	include_dirs = list(map(str, [
@@ -93,8 +93,8 @@ setup(
 	name         = 'pragmatic',
 	version      = '0.2',
 	description  = 'C++ accelerated parts of auto_graph',
-	packages     = ['auto_graph', 'auto_graph_cpp'],
+	packages     = ['auto_graph', 'auto_graph.__private'],
 	ext_modules  = [auto_graph_cpp],
-	package_data = { 'auto_graph.__private': ['*.pyd'] },
+	package_data = { 'auto_graph.__private': ['*.pyd', '*.pyi'] },
 	cmdclass     = { 'build_ext': CustomBuildExtCommand }
 )
