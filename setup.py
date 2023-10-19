@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import shutil
 from typing import List
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 
 is_windows = sys.platform == "win32"
@@ -11,9 +11,9 @@ is_linux = sys.platform == "linux"
 is_debug_build = '--debug' in sys.argv
 is_debug_python = hasattr(sys, 'gettotalrefcount')
 
-source_dir          = Path(__file__).parent.absolute()
-cpp_source_dir      = source_dir.joinpath('auto_graph_cpp')
-project_dir         = source_dir.parent
+project_dir         = Path(__file__).parent
+auto_graph_dir      = project_dir.joinpath('auto_graph')
+auto_graph_cpp_dir  = project_dir.joinpath('auto_graph_cpp')
 build_dir           = project_dir.joinpath('build')
 extension_build_dir = build_dir.joinpath(f'{"lib.win-amd64" if is_windows else "lib.linux-x86_64"}-cpython-312{"-pydebug" if is_debug_python else ""}')
 external_dir        = project_dir.joinpath('external')
@@ -44,8 +44,8 @@ class CustomBuildExtCommand(build_ext):
 	def run(self):
 		# Pre-build step
 		print('Prebuild step')
-		if(source_dir.joinpath(pyd_name).exists()):
-			source_dir.joinpath(pyd_name).unlink()
+		if(auto_graph_dir.joinpath(pyd_name).exists()):
+			auto_graph_dir.joinpath(pyd_name).unlink()
 		
 		# Call the original build_ext command
 		build_ext.run(self)
@@ -53,7 +53,7 @@ class CustomBuildExtCommand(build_ext):
 		# Post-build step
 		print('Postbuild step')
 		src = extension_build_dir.joinpath(pyd_name)
-		dst = source_dir.joinpath(pyd_name)
+		dst = auto_graph_dir.joinpath(pyd_name)
 		print(f'copy: \n src: {src}\n dst: {dst}')
 		shutil.copy2(src, dst)
 
@@ -70,10 +70,10 @@ def compile_args():
 			'-O0'
 		]
 
-module = Extension(
+auto_graph_cpp = Extension(
 	module_name,
-	sources = glob_files(cpp_source_dir, 'cpp'),
-	depends = glob_files(cpp_source_dir, 'hpp'),
+	sources = glob_files(auto_graph_cpp_dir, 'cpp'),
+	depends = glob_files(auto_graph_cpp_dir, 'hpp'),
 	include_dirs = list(map(str, [
 		python_include_dir,
 		external_dir.joinpath('readerwriterqueue'),
@@ -89,9 +89,10 @@ module = Extension(
 )
 
 setup(
-	name        = module_name,
-	version     = '1.0',
+	name        = 'auto-graph',
+	version     = '0.1',
 	description = 'C++ accelerated parts of auto_graph',
-	ext_modules = [module],
+	packages    = find_packages(),
+	ext_modules = [auto_graph_cpp],
 	cmdclass    = { 'build_ext': CustomBuildExtCommand }
 )
