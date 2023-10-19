@@ -96,6 +96,19 @@
 			"presentation": {
 				"reveal": "always"
 			}
+		},
+		{
+			"label": "create virtual environment",
+			"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe",
+			"args": [
+				"-m",
+				"venv",
+				"testenv"
+			]
+		},
+		{
+			"label": "activate testenv",
+			"command": "${workspaceFolder}/testenv/Scripts/activate"
 		}
 	],
 	"presentation": {

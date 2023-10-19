@@ -3,3 +3,4 @@ dist
 *.json
 vc140.pdb
 auto_graph.egg-info
+testenv
