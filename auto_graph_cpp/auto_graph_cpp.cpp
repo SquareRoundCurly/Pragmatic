@@ -6,6 +6,7 @@
 
 // auto_graph
 #include "Out.hpp"
+#include "PythonUtils.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -82,11 +83,18 @@ namespace Pragmatic::auto_graph
 	};
 
 	static PyModuleDef_Slot slots[] =
+	#if PY_VERSION_AT_LEAST(3, 12)
 	{
 		{ Py_mod_exec, (void*)auto_graph_cpp::init },
 		{ Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED },
 		{ 0, NULL }
 	};
+	#else
+	{
+		{ Py_mod_exec, (void*)auto_graph_cpp::init },
+		{ 0, NULL }
+	};
+	#endif
 
 	static struct PyModuleDef module =
 	{

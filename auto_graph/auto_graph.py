@@ -1,5 +1,13 @@
 # Imports
-from .__private import auto_graph_cpp
+import ctypes
+
+try:
+    from .__private import auto_graph_cpp
+except ImportError as e:
+    print(e)
+    ctypes.windll.kernel32.SetLastError(0)
+    ctypes.windll.kernel32.GetLastError()
+    print(ctypes.WinError())
 import importlib
 
 # At exit callback
