@@ -6,6 +6,7 @@
 
 // auto_graph
 #include "Out.hpp"
+#include "PythonUtils.hpp"
 
 namespace Pragmatic
 {

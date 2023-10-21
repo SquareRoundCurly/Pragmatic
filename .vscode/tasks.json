@@ -39,11 +39,19 @@
 			]
 		},
 		{
-			"label": "package auto_graph RELEASE",
+			"label": "package auto_graph RELEASE 3.12",
 			"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe",
 			"args": [
 				"setup.py",
 				"sdist",
+				"bdist_wheel"
+			]
+		},
+		{
+			"label": "package auto_graph RELEASE 3.11",
+			"command": "python",
+			"args": [
+				"setup.py",
 				"bdist_wheel"
 			]
 		},
