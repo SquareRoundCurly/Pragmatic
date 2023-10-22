@@ -25,7 +25,7 @@ def SomeOtherFunc():
 	for i in range(10):
 		value = value + value
 			
-	print(value)
+	auto_graph.print(value)
 
 auto_graph.task(SomeFunc)
 auto_graph.task(SomeOtherFunc)

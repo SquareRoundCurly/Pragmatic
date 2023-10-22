@@ -32,15 +32,29 @@ namespace Pragmatic::auto_graph
 
 	PyObject* auto_graph_cpp::print(PyObject* self, PyObject* args)
 	{
-		const char* str;
-		if (!PyArg_ParseTuple(args, "s", &str)) // Get a string
+		PyObject* obj;
+		if (!PyArg_ParseTuple(args, "O", &obj)) // Get an object
 		{
-			PyErr_SetString(PyExc_TypeError, "parameter must be a string");
+			PyErr_SetString(PyExc_TypeError, "Failed to parse argument as object");
 			return NULL;
+		}
+
+		PyObject* str_obj = PyObject_Str(obj); // Get the string representation of the object
+		if (!str_obj)
+		{
+			return NULL;  // PyObject_Str failed.
+		}
+
+		const char* str = PyUnicode_AsUTF8(str_obj);
+		if (!str)
+		{
+			Py_DECREF(str_obj);
+			return NULL;  // PyUnicode_AsUTF8 failed.
 		}
 
 		Out() << str << std::endl;
 
+		Py_DECREF(str_obj);  // Decrement the reference count of the string object
 		Py_RETURN_NONE;
 	}
 
