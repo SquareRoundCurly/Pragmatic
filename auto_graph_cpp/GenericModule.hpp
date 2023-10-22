@@ -1,5 +1,8 @@
 #pragma once
 
+// Standard library
+#include <stdexcept>
+
 // External
 #include <pytypedefs.h>
 
@@ -9,45 +12,37 @@ typedef int (*visitproc)(PyObject *, void *);
 namespace Pragmatic::auto_graph
 {
 	template <class ModuleClass>
-	ModuleClass* GetModule()
-	{
-		if (auto_graph_cpp::module == nullptr)
-		{
-			PyModuleDef* moduleDef = &ModuleClass::moduleDef;
-			ModuleClass::module = PyState_FindModule(moduleDef);
-		}
-		return reinterpret_cast<ModuleClass*>(PyModule_GetState(ModuleClass::module));
-	}
+	ModuleClass* GetModule(PyObject* module = nullptr);
 
-	template <class ModuleClass, typename T>
-	ModuleClass* GetModule(T* module)
+	template <class ModuleClass>
+	int init(PyObject *module)
 	{
-		if (auto_graph_cpp::module == nullptr) ModuleClass::module = (PyObject*)module;
-		return reinterpret_cast<ModuleClass*>(PyModule_GetState((PyObject*)module));
+		// Placement new, call constructor
+		ModuleClass* moduleState = (ModuleClass*) PyModule_GetState(module);
+		new (moduleState) ModuleClass();
+
+		// Store Python module object
+		auto moduleClassInstance = GetModule<ModuleClass>(module);
+
+		return moduleClassInstance->init(module);
 	}
 
 	template <class ModuleClass>
 	int traverse(PyObject* module, visitproc visit, void* arg)
 	{
-		return GetModule<ModuleClass>(module)->traverse(module, visit, arg);
+		return GetModule<ModuleClass>()->traverse(module, visit, arg);
 	}
 
 	template <class ModuleClass>
 	int clear(PyObject* module)
 	{
-		return GetModule<ModuleClass>(module)->clear(module);
+		return GetModule<ModuleClass>()->clear(module);
 	}
 
 	template <class ModuleClass>
 	void free(void* module)
 	{
-		GetModule<ModuleClass>(module)->free(module);
-	}
-
-	template <class ModuleClass>
-	int init(PyObject *module)
-	{
-		return GetModule<ModuleClass>(module)->init(module);
+		GetModule<ModuleClass>()->free(module);
 	}
 
 	template <class ModuleClass, PyObject* (ModuleClass::*moduleMethod)(PyObject*, PyObject*)>

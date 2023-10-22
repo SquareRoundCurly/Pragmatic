@@ -11,6 +11,11 @@
 
 namespace Pragmatic::auto_graph
 {
+	auto_graph_cpp::auto_graph_cpp()
+	{
+		Out() << "[auto_graph] " << "Main module constructor" << std::endl;
+	}
+
 	PyObject* auto_graph_cpp::cleanup(PyObject* self, PyObject* args)
 	{
 		Out() << "[auto_graph] " << "cleanup" << std::endl;
@@ -34,16 +39,13 @@ namespace Pragmatic::auto_graph
 			return NULL;
 		}
 
-		Pragmatic::auto_graph::Out() << str << std::endl;
+		Out() << str << std::endl;
 
 		Py_RETURN_NONE;
-
 	}
 
 	PyObject* auto_graph_cpp::add_task(PyObject* self, PyObject* args)
 	{
-		
-
 		Py_RETURN_NONE;
 	}
 
