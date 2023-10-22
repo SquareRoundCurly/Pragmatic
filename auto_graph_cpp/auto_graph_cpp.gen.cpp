@@ -6,6 +6,7 @@
 
 // auto_graph
 #include "GenericModule.hpp"
+#include "PythonUtils.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -32,7 +33,9 @@ namespace Pragmatic::auto_graph
 	{
 		{ Py_mod_create, create },
 		{ Py_mod_exec, init<auto_graph_cpp> },
+		#if PY_VERSION_AT_LEAST(3, 12)
 		{ Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED },
+		#endif
 		{ 0, NULL }
 	};
 
