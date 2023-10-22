@@ -16,14 +16,17 @@ atexit.register(auto_graph_cpp.cleanup)
 
 # auto_graph methods
 
-def cleanup():
+def cleanup() -> None:
 	auto_graph_cpp.cleanup()
 
-def print(msg: str):
+def print(msg: str) -> None:
 	auto_graph_cpp.print(msg)
 
-def task(code: str):
+def task(code: str) -> None:
 	auto_graph_cpp.task(code)
+
+def exec() -> None:
+	auto_graph_cpp.exec()
 
 # Handle module reload
 __original_reload = importlib.reload

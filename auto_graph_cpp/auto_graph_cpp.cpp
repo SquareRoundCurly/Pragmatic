@@ -46,6 +46,35 @@ namespace Pragmatic::auto_graph
 
 	PyObject* auto_graph_cpp::add_task(PyObject* self, PyObject* args)
 	{
+		PyObject* callable;
+		if (!PyArg_ParseTuple(args, "O", &callable))
+		{
+			return nullptr;
+		}
+
+		Py_INCREF(callable);
+        tasks.push_back(callable);
+
+		Py_RETURN_NONE;
+	}
+
+	PyObject* auto_graph_cpp::exec(PyObject* self, PyObject* args)
+	{
+		for (PyObject* task : tasks)
+		{
+			if (PyCallable_Check(task))
+			{
+				PyObject* result = PyObject_CallObject(task, nullptr);
+				if (!result)
+				{
+					PyErr_Print();
+				}
+				Py_XDECREF(result);
+			}
+			Py_DECREF(task);
+		}
+		tasks.clear();
+
 		Py_RETURN_NONE;
 	}
 

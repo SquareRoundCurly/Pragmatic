@@ -22,7 +22,8 @@ namespace Pragmatic::auto_graph
 		{ "cleanup", method<auto_graph_cpp, &auto_graph_cpp::cleanup>,  METH_NOARGS,  "Cleanup function to be called before exit"                      },
 		{ "reinit",  method<auto_graph_cpp, &auto_graph_cpp::reinit>,   METH_NOARGS,  "Callback for module reloads"                                    },
 		{ "print",   method<auto_graph_cpp, &auto_graph_cpp::print>,    METH_VARARGS, "A thread safe print function"                                   },
-		{ "task",    method<auto_graph_cpp, &auto_graph_cpp::add_task>, METH_VARARGS, "Python files, strings or functions to add to the executor pool" },
+		{ "task",    method<auto_graph_cpp, &auto_graph_cpp::add_task>, METH_VARARGS, "Python functions to add to the executor pool"                   },
+		{ "exec",    method<auto_graph_cpp, &auto_graph_cpp::exec>,     METH_VARARGS, "Execute added tasks"                                            },
 		{ NULL, NULL, 0, NULL }
 	};
 

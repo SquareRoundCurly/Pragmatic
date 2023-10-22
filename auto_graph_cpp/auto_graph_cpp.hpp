@@ -24,6 +24,7 @@ namespace Pragmatic::auto_graph
 		PyObject* reinit(PyObject* self, PyObject* args);
 		PyObject* print(PyObject* self, PyObject* args);
 		PyObject* add_task(PyObject* self, PyObject* args);
+		PyObject* exec(PyObject* self, PyObject* args);
 
 		public:
 		virtual int init(PyObject *module) override;
