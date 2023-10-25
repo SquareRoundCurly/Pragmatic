@@ -6,6 +6,9 @@
 // External
 #include <pytypedefs.h>
 
+// auto_graph
+#include "ClassRegistry.hpp"
+
 // Forward declarations
 typedef int (*visitproc)(PyObject *, void *);
 
@@ -23,6 +26,9 @@ namespace Pragmatic::auto_graph
 
 		// Store Python module object
 		auto moduleClassInstance = GetModule<ModuleClass>(module);
+
+		// Initalize class types
+		Registry::CallAll(module);
 
 		return moduleClassInstance->init(module);
 	}

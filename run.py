@@ -14,7 +14,8 @@ import auto_graph
 
 auto_graph.print('Hello')
 
-
+task = auto_graph.Task()
+pass
 
 
 def SomeFunc():

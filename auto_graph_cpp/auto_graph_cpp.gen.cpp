@@ -7,6 +7,7 @@
 // auto_graph
 #include "GenericModule.hpp"
 #include "PythonUtils.hpp"
+#include "ClassRegistry.hpp"
 
 namespace Pragmatic::auto_graph
 {
