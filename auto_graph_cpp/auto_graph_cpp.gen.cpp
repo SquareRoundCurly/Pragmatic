@@ -5,7 +5,7 @@
 #include <Python.h>
 
 // auto_graph
-#include "PyRuntime/GenericModule.hpp"
+#include "PyRuntime/PyModule.hpp"
 #include "PyRuntime/PythonUtils.hpp"
 #include "PyRuntime/ClassRegistry.hpp"
 

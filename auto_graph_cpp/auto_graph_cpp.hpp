@@ -7,14 +7,11 @@
 #include <pytypedefs.h>
 
 // auto_graph
-#include "PyRuntime/ModuleInterface.hpp"
-
-// Forward declarations
-typedef int (*visitproc)(PyObject *, void *);
+#include "PyRuntime/Interfaces.hpp"
 
 namespace Pragmatic::auto_graph
 {
-	class auto_graph_cpp : public ModuleInterface
+	class auto_graph_cpp : public PyModule
 	{
 		public:
 		auto_graph_cpp();

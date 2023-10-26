@@ -3,15 +3,11 @@
 // External
 #include "Python.h"
 
+// auto_graph
+#include "Interfaces.hpp"
+
 namespace Pragmatic::auto_graph
 {
-	class PyClass
-	{
-		public: // PyObject callbacks
-		virtual int PyClassInit(PyClass* self, PyObject* args, PyObject* kwds) = 0;
-		virtual void PyClassDestruct(PyClass* self) = 0;
-	};
-
 	template<class PyClassType>
 	struct PyClassWrapper
 	{

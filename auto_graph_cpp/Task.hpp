@@ -3,7 +3,7 @@
 // External
 #include <pytypedefs.h>
 
-#include "PyRuntime/PyClass.hpp"
+#include "PyRuntime/Interfaces.hpp"
 
 namespace Pragmatic::auto_graph
 {

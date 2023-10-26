@@ -8,7 +8,7 @@ typedef int (*visitproc)(PyObject *, void *);
 
 namespace Pragmatic::auto_graph
 {
-	class ModuleInterface
+	class PyModule
 	{
 		public: // Module callbacks
 		virtual int init(PyObject *module) = 0;
@@ -16,4 +16,11 @@ namespace Pragmatic::auto_graph
 		virtual int clear(PyObject* module) = 0;
 		virtual void free(void* module) = 0;
 	};
-} // namespace Pragmatic::auto_graph
+
+	class PyClass
+	{
+		public: // PyObject callbacks
+		virtual int PyClassInit(PyClass* self, PyObject* args, PyObject* kwds) = 0;
+		virtual void PyClassDestruct(PyClass* self) = 0;
+	};
+}
