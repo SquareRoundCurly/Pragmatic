@@ -46,7 +46,7 @@ namespace Pragmatic::auto_graph
 		if (callable) Py_DECREF(callable);
 	}
 
-	PyObject* Task::Exec(PyObject*, PyObject*)
+	PyObject* Task::Exec()
 	{
 		PyObject* result = PyObject_CallObject(callable, nullptr);
 		if (!result)

@@ -18,10 +18,19 @@ namespace Pragmatic::auto_graph
 	template <class PyClassDerived>
 	using PyFunction = PyObject* (PyClassDerived::*)(PyObject*, PyObject*);
 
+	template <class PyClassDerived>
+	using PyFunctionNoArgs = PyObject* (PyClassDerived::*)();
+
 	template <class PyClassDerived, PyFunction<PyClassDerived> MethodPtr>
 	static PyObject* Method(PyObject* self, PyObject* args)
 	{
 		return (((PyClassWrapper<PyClassDerived>*)self)->pyClass.*MethodPtr)(self, args);
+	}
+
+	template <class PyClassDerived, PyFunctionNoArgs<PyClassDerived> MethodPtr>
+	static PyObject* Method(PyObject* self, PyObject* args)
+	{
+		return (((PyClassWrapper<PyClassDerived>*)self)->pyClass.*MethodPtr)();
 	}
 
 	template <class PyClassDerived>
