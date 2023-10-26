@@ -15,11 +15,12 @@ import auto_graph
 auto_graph.print('Hello')
 
 task = auto_graph.Task()
+# task = None
 pass
 
 
 def SomeFunc():
-    auto_graph.print('Hello')
+	auto_graph.print('Hello')
 
 def SomeOtherFunc():
 	value = 1

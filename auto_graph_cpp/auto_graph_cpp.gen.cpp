@@ -5,9 +5,9 @@
 #include <Python.h>
 
 // auto_graph
-#include "GenericModule.hpp"
-#include "PythonUtils.hpp"
-#include "ClassRegistry.hpp"
+#include "PyRuntime/GenericModule.hpp"
+#include "PyRuntime/PythonUtils.hpp"
+#include "PyRuntime/ClassRegistry.hpp"
 
 namespace Pragmatic::auto_graph
 {

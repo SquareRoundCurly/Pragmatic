@@ -5,27 +5,21 @@
 #include "Python.h"
 
 // auto_graph
-#include "ClassRegistry.hpp"
+#include "PyRuntime/PyClass.hpp"
+#include "PyRuntime/ClassRegistry.hpp"
+#include "Out.hpp"
 
 namespace Pragmatic::auto_graph
 {
-	static int ClassInit(Task *self, PyObject *args, PyObject *kwds)
-	{
-		return 0;
-	}
-
-	static void ClassDestruct(Task* self)
-	{
-		return;
-	}
+	using PyTask = PyClassWrapper<Task>;
 
 	static PyTypeObject PyType_Pragmatic_auto_graph_Task =
 	{
 		PyVarObject_HEAD_INIT(NULL, 0)
 		"auto_graph_cpp.Task",                    /* tp_name */
-		sizeof(Task),                             /* tp_basicsize */
+		sizeof(PyTask),                           /* tp_basicsize */
 		0,                                        /* tp_itemsize */
-		(destructor)ClassDestruct,                /* tp_dealloc */
+		(destructor)PyClassDestruct<Task>,        /* tp_dealloc */
 		0,                                        /* tp_print */
 		0,                                        /* tp_getattr */
 		0,                                        /* tp_setattr */
@@ -56,7 +50,7 @@ namespace Pragmatic::auto_graph
 		0,                                        /* tp_descr_get */
 		0,                                        /* tp_descr_set */
 		0,                                        /* tp_dictoffset */
-		(initproc)ClassInit,                      /* tp_init */
+		(initproc)PyClassInit<Task>,              /* tp_init */
 		0,                                        /* tp_alloc */
 		PyType_GenericNew,                        /* tp_new */
 	};
@@ -66,7 +60,7 @@ namespace Pragmatic::auto_graph
 		if (PyType_Ready(&PyType_Pragmatic_auto_graph_Task) < 0) return -1;
 
 		Py_INCREF(&PyType_Pragmatic_auto_graph_Task);
-		if (PyModule_AddObject(module, "Task", (PyObject *)&PyType_Pragmatic_auto_graph_Task) < 0)
+		if (PyModule_AddObject(module, "Task", (PyObject*)&PyType_Pragmatic_auto_graph_Task) < 0)
 		{
 			Py_DECREF(&PyType_Pragmatic_auto_graph_Task);
 			return -1;

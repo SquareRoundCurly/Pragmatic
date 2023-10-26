@@ -3,17 +3,25 @@
 // External
 #include <pytypedefs.h>
 
+#include "PyRuntime/PyClass.hpp"
+
 namespace Pragmatic::auto_graph
 {
-	class Task
+	class Task : public PyClass
 	{
-		Task(PyObject* callable, PyObject* args = nullptr);
+		public:
+		Task();
 		~Task();
 
+		public: // PyObject callbacks
+		virtual int PyClassInit(PyClass* self, PyObject* args, PyObject* kwds) override;
+		virtual void PyClassDestruct(PyClass* self) override;
+
+		public:
 		PyObject* Exec();
 		PyObject* GetResult() const;
 
-	private:
+		private:
 		PyObject* callable;
 		PyObject* args;
 		PyObject* result;

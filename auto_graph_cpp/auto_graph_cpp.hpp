@@ -7,7 +7,7 @@
 #include <pytypedefs.h>
 
 // auto_graph
-#include "ModuleInterface.hpp"
+#include "PyRuntime/ModuleInterface.hpp"
 
 // Forward declarations
 typedef int (*visitproc)(PyObject *, void *);

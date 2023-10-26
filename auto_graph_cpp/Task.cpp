@@ -4,41 +4,40 @@
 // External
 #include "Python.h"
 
+// auto_graph
+#include "Out.hpp"
+
 namespace Pragmatic::auto_graph
 {
-	Task::Task(PyObject* callable, PyObject* args) : callable(callable), args(args), result(nullptr)
+	Task::Task()
 	{
-		Py_XINCREF(callable);
-		Py_XINCREF(args);
+		Out() << "[auto_graph] Task ctor" << std::endl;
 	}
 
 	Task::~Task()
 	{
-		Py_XDECREF(callable);
-		Py_XDECREF(args);
-		Py_XDECREF(result);
+		Out() << "[auto_graph] Task dtor" << std::endl;
+	}
+
+	int Task::PyClassInit(PyClass* self, PyObject* args, PyObject* kwds)
+	{
+		Out() << "[auto_graph] Task Init" << std::endl;
+
+		return 0;
+	}
+
+	void Task::PyClassDestruct(PyClass* self)
+	{
+		Out() << "[auto_graph] Task destruct" << std::endl;
 	}
 
 	PyObject* Task::Exec()
 	{
-		if (!PyCallable_Check(callable))
-		{
-			PyErr_SetString(PyExc_TypeError, "Stored object is not callable");
-			return nullptr;
-		}
-
-		result = PyObject_CallObject(callable, args);
-		return result;
+		Py_RETURN_NONE;
 	}
 
 	PyObject* Task::GetResult() const
 	{
-		if (result)
-		{
-			Py_INCREF(result);
-			return result;
-		}
-		
 		Py_RETURN_NONE;
 	}
 } // namespace Pragmatic::auto_graph
