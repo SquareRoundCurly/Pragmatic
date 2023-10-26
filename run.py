@@ -14,7 +14,10 @@ import auto_graph
 
 auto_graph.print('Hello')
 
-task = auto_graph.Task()
+try:
+	task = auto_graph.Task()
+except Exception as e:
+	print(f'Error: {e}')
 # task = None
 pass
 

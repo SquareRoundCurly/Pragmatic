@@ -65,7 +65,7 @@ namespace Pragmatic::auto_graph
 		}
 
 		Py_INCREF(callable);
-        tasks.push_back(callable);
+		tasks.push_back(callable);
 
 		Py_RETURN_NONE;
 	}

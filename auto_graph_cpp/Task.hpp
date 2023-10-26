@@ -19,11 +19,9 @@ namespace Pragmatic::auto_graph
 
 		public:
 		PyObject* Exec();
-		PyObject* GetResult() const;
 
 		private:
 		PyObject* callable;
 		PyObject* args;
-		PyObject* result;
 	};
 } // namespace Pragmatic::auto_graph

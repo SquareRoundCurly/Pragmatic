@@ -21,7 +21,20 @@ namespace Pragmatic::auto_graph
 
 	int Task::PyClassInit(PyClass* self, PyObject* args, PyObject* kwds)
 	{
-		Out() << "[auto_graph] Task Init" << std::endl;
+		Out() << "[auto_graph] Task init" << std::endl;
+
+		if (!PyArg_ParseTuple(args, "O", &callable))
+		{
+			PyErr_SetString(PyExc_TypeError, "Expected an callable argument");
+			return -1;
+		}
+		if (PyCallable_Check(callable))
+		{
+			PyErr_SetString(PyExc_TypeError, "Expected an callable argument");
+			return -1;
+		}
+
+		Py_INCREF(callable);
 
 		return 0;
 	}
@@ -29,15 +42,20 @@ namespace Pragmatic::auto_graph
 	void Task::PyClassDestruct(PyClass* self)
 	{
 		Out() << "[auto_graph] Task destruct" << std::endl;
+
+		if (callable) Py_DECREF(callable);
 	}
 
 	PyObject* Task::Exec()
 	{
-		Py_RETURN_NONE;
-	}
 
-	PyObject* Task::GetResult() const
-	{
-		Py_RETURN_NONE;
+		PyObject* result = PyObject_CallObject(callable, nullptr);
+		if (!result)
+		{
+			PyErr_Print();
+		}
+		Py_XDECREF(result);
+
+		return result;
 	}
 } // namespace Pragmatic::auto_graph
