@@ -70,8 +70,8 @@ namespace Pragmatic::auto_graph
 		{
 			Py_DECREF(&PyType_Pragmatic_auto_graph_Task);
 			return -1;
-    	}
+		}
 	}
 
-	REGISTER_CLASS(Register);
+	REGISTER_CLASS(PyType_Pragmatic_auto_graph_Task, "Task");
 } // namespace Pragmatic::auto_graph

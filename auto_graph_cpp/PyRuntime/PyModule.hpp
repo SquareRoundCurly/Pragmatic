@@ -28,7 +28,8 @@ namespace Pragmatic::auto_graph
 		auto moduleClassInstance = GetModule<ModuleClass>(module);
 
 		// Initalize class types
-		Registry::CallAll(module);
+		int returnCode = Registry::RegisterTypes(module);
+		if (returnCode != 0) return returnCode;
 
 		return moduleClassInstance->init(module);
 	}
