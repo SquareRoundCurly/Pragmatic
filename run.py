@@ -21,6 +21,12 @@ except Exception as e:
 # task = None
 pass
 
+def test():
+	return 2 + 5
+
+t = auto_graph.Task(test)
+auto_graph.print(t.exec())
+t = None
 
 def SomeFunc():
 	auto_graph.print('Hello')

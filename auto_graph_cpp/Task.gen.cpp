@@ -11,13 +11,17 @@
 
 namespace Pragmatic::auto_graph
 {
-	using PyTask = PyClassWrapper<Task>;
+	static PyMethodDef PyTask_methods[] =
+	{
+		{ "exec", (PyCFunction)Method<Task, &Task::Exec>, METH_NOARGS, "Executes the stored callable." },
+		{ nullptr }  // sentinel
+	};
 
 	static PyTypeObject PyType_Pragmatic_auto_graph_Task =
 	{
 		PyVarObject_HEAD_INIT(NULL, 0)
 		"auto_graph_cpp.Task",                    /* tp_name */
-		sizeof(PyTask),                           /* tp_basicsize */
+		sizeof(PyClassWrapper<Task>),             /* tp_basicsize */
 		0,                                        /* tp_itemsize */
 		(destructor)PyClassDestruct<Task>,        /* tp_dealloc */
 		0,                                        /* tp_print */
@@ -42,7 +46,7 @@ namespace Pragmatic::auto_graph
 		0,                                        /* tp_weaklistoffset */
 		0,                                        /* tp_iter */
 		0,                                        /* tp_iternext */
-		0,                                        /* tp_methods */
+		PyTask_methods,                           /* tp_methods */
 		0,                                        /* tp_members */
 		0,                                        /* tp_getset */
 		0,                                        /* tp_base */

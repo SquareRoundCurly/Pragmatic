@@ -28,7 +28,7 @@ namespace Pragmatic::auto_graph
 			PyErr_SetString(PyExc_TypeError, "Expected an callable argument");
 			return -1;
 		}
-		if (PyCallable_Check(callable))
+		if (!PyCallable_Check(callable))
 		{
 			PyErr_SetString(PyExc_TypeError, "Expected an callable argument");
 			return -1;
@@ -46,9 +46,8 @@ namespace Pragmatic::auto_graph
 		if (callable) Py_DECREF(callable);
 	}
 
-	PyObject* Task::Exec()
+	PyObject* Task::Exec(PyObject*, PyObject*)
 	{
-
 		PyObject* result = PyObject_CallObject(callable, nullptr);
 		if (!result)
 		{
