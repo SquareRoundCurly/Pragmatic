@@ -61,17 +61,5 @@ namespace Pragmatic::auto_graph
 		PyType_GenericNew,                        /* tp_new */
 	};
 
-	int Register(PyObject* module)
-	{
-		if (PyType_Ready(&PyType_Pragmatic_auto_graph_Task) < 0) return -1;
-
-		Py_INCREF(&PyType_Pragmatic_auto_graph_Task);
-		if (PyModule_AddObject(module, "Task", (PyObject*)&PyType_Pragmatic_auto_graph_Task) < 0)
-		{
-			Py_DECREF(&PyType_Pragmatic_auto_graph_Task);
-			return -1;
-		}
-	}
-
 	REGISTER_CLASS(PyType_Pragmatic_auto_graph_Task, "Task");
 } // namespace Pragmatic::auto_graph

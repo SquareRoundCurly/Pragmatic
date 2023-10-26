@@ -31,6 +31,10 @@ namespace Pragmatic::auto_graph
 
 		static int PyClassInit(PyClassWrapper<PyClassDerived>* self, PyObject* args, PyObject* kwds)
 		{
+			// Task original = *self;
+			// new (self) Task();
+			// self->ob_base = original.ob_base;
+
 			// Placement new, call constructor
 			new (&self->pyClass) PyClassDerived();
 
