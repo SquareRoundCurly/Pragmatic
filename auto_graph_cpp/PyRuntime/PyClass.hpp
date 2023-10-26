@@ -8,49 +8,44 @@
 
 namespace Pragmatic::auto_graph
 {
-	template<class PyClassType>
+	template<class PyClassDerived>
 	struct PyClassWrapper
 	{
 		PyObject_HEAD;
-		PyClassType pyClass;
+		PyClassDerived pyClass;
+
+		using PyFunction = PyObject* (PyClassDerived::*)(PyObject*, PyObject*);
+		using PyFunctionNoArgs = PyObject* (PyClassDerived::*)();
+
+		template <PyFunction MethodPtr>
+		static PyObject* Method(PyObject* self, PyObject* args)
+		{
+			return (((PyClassWrapper<PyClassDerived>*)self)->pyClass.*MethodPtr)(self, args);
+		}
+
+		template <PyFunctionNoArgs MethodPtr>
+		static PyObject* Method(PyObject* self, PyObject* args)
+		{
+			return (((PyClassWrapper<PyClassDerived>*)self)->pyClass.*MethodPtr)();
+		}
+
+		static int PyClassInit(PyClassWrapper<PyClassDerived>* self, PyObject* args, PyObject* kwds)
+		{
+			// Placement new, call constructor
+			new (&self->pyClass) PyClassDerived();
+
+			auto initReturnCode = self->pyClass.PyClassInit(&self->pyClass, args, kwds);
+
+			return initReturnCode;
+		}
+
+		static void PyClassDestruct(PyClassWrapper<PyClassDerived>* self)
+		{
+			self->pyClass.PyClassDestruct(&self->pyClass);
+
+			self->pyClass.~PyClassDerived();
+
+			return;
+		}
 	};
-
-	template <class PyClassDerived>
-	using PyFunction = PyObject* (PyClassDerived::*)(PyObject*, PyObject*);
-
-	template <class PyClassDerived>
-	using PyFunctionNoArgs = PyObject* (PyClassDerived::*)();
-
-	template <class PyClassDerived, PyFunction<PyClassDerived> MethodPtr>
-	static PyObject* Method(PyObject* self, PyObject* args)
-	{
-		return (((PyClassWrapper<PyClassDerived>*)self)->pyClass.*MethodPtr)(self, args);
-	}
-
-	template <class PyClassDerived, PyFunctionNoArgs<PyClassDerived> MethodPtr>
-	static PyObject* Method(PyObject* self, PyObject* args)
-	{
-		return (((PyClassWrapper<PyClassDerived>*)self)->pyClass.*MethodPtr)();
-	}
-
-	template <class PyClassDerived>
-	int PyClassInit(PyClassWrapper<PyClassDerived>* self, PyObject* args, PyObject* kwds)
-	{
-		// Placement new, call constructor
-		new (&self->pyClass) PyClassDerived();
-
-		auto initReturnCode = self->pyClass.PyClassInit(&self->pyClass, args, kwds);
-
-		return initReturnCode;
-	}
-
-	template <class PyClassDerived>
-	void PyClassDestruct(PyClassWrapper<PyClassDerived>* self)
-	{
-		self->pyClass.PyClassDestruct(&self->pyClass);
-
-		self->pyClass.~PyClassDerived();
-
-		return;
-	}
 } // namespace Pragmatic::auto_graph
