@@ -21,11 +21,11 @@ except Exception as e:
 # task = None
 pass
 
-def test(i: int):
-	return i + 5
+def test(i: int, j: int):
+	return i + j
 
 t = auto_graph.Task(test)
-auto_graph.print(t.exec(5))
+auto_graph.print(t.exec(2000, 3000))
 t = None
 
 def SomeFunc():
