@@ -129,6 +129,29 @@ namespace Pragmatic::auto_graph
 	{
 		auto* mergedArgs = merge_tuples(this->args, args);
 
+		PyObject* funcCode = PyFunction_GetCode(callable);
+		if (!funcCode)
+		{
+			Py_DECREF(mergedArgs);
+			return NULL;  // Not a function or other error.
+		}
+		
+    	Py_ssize_t expectedArgsCount = ((PyCodeObject*)funcCode)->co_argcount;
+    	Py_ssize_t providedArgsCount = PyTuple_Size(mergedArgs);
+
+		if (providedArgsCount < expectedArgsCount)
+		{
+			PyErr_SetString(PyExc_TypeError, "Not enough arguments provided");
+			Py_DECREF(mergedArgs);
+			return NULL;
+		}
+		else if (providedArgsCount > expectedArgsCount)
+		{
+			PyObject* slicedArgs = PyTuple_GetSlice(mergedArgs, 0, expectedArgsCount);
+			Py_DECREF(mergedArgs);  // Since we're done with the mergedArgs tuple
+			mergedArgs = slicedArgs;  // Point mergedArgs to the new sliced tuple
+		}
+
 		PyObject* result = PyObject_CallObject(callable, mergedArgs);
 		Py_DECREF(mergedArgs);
 

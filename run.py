@@ -24,8 +24,8 @@ pass
 def test(i: int, j: int):
 	return i + j
 
-t = auto_graph.Task(test)
-auto_graph.print(t.exec(2000, 3000))
+t = auto_graph.Task(test, 1000, 2000)
+auto_graph.print(t.exec(3000))
 t = None
 
 def SomeFunc():
