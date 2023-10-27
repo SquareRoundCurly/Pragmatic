@@ -135,21 +135,30 @@ namespace Pragmatic::auto_graph
 			Py_DECREF(mergedArgs);
 			return NULL;  // Not a function or other error.
 		}
-		
-    	Py_ssize_t expectedArgsCount = ((PyCodeObject*)funcCode)->co_argcount;
+		PyCodeObject* codeObj = (PyCodeObject*)funcCode;
+
+    	Py_ssize_t expectedArgsCount = codeObj->co_argcount;
     	Py_ssize_t providedArgsCount = PyTuple_Size(mergedArgs);
 
-		if (providedArgsCount < expectedArgsCount)
+		// Count default arguments
+		PyObject* defaults = PyFunction_GetDefaults(callable);
+		Py_ssize_t defaultArgsCount = defaults ? PyTuple_Size(defaults) : 0;
+
+		if (providedArgsCount < (expectedArgsCount - defaultArgsCount))
 		{
 			PyErr_SetString(PyExc_TypeError, "Not enough arguments provided");
 			Py_DECREF(mergedArgs);
 			return NULL;
 		}
-		else if (providedArgsCount > expectedArgsCount)
+
+		// If there are *args or **kwargs, we won't slice away excess arguments.
+		bool hasVarArgs = codeObj->co_flags & CO_VARARGS;
+		bool hasKeywordArgs = codeObj->co_flags & CO_VARKEYWORDS;
+		if (!hasVarArgs && !hasKeywordArgs && providedArgsCount > expectedArgsCount)
 		{
 			PyObject* slicedArgs = PyTuple_GetSlice(mergedArgs, 0, expectedArgsCount);
-			Py_DECREF(mergedArgs);  // Since we're done with the mergedArgs tuple
-			mergedArgs = slicedArgs;  // Point mergedArgs to the new sliced tuple
+			Py_DECREF(mergedArgs);
+			mergedArgs = slicedArgs;
 		}
 
 		PyObject* result = PyObject_CallObject(callable, mergedArgs);
