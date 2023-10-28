@@ -8,6 +8,7 @@
 
 // auto_graph
 #include "PyRuntime/Interfaces.hpp"
+#include "PyRuntime/Interpreter.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -29,6 +30,8 @@ namespace Pragmatic::auto_graph
 		virtual int clear(PyObject* module) override;
 		virtual void free(void* module) override;
 
+		public:
+		std::vector<Interpreter*> interpreters;
 		private:
 		std::vector<PyObject*> tasks;
 	};

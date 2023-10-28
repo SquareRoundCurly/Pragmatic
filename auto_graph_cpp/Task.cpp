@@ -6,6 +6,8 @@
 
 // auto_graph
 #include "Out.hpp"
+#include "auto_graph_cpp.hpp"
+#include "PyRuntime/PyModule.hpp"
 
 PyObject* ensure_tuple(PyObject* obj)
 {
@@ -163,8 +165,9 @@ namespace Pragmatic::auto_graph
 			mergedArgs = slicedArgs;
 		}
 
-		PyObject* result = PyObject_Call(callable, mergedArgs, kwargs);
-		// PyObject* result = PyObject_CallObject(callable, mergedArgs);
+		PyObject* result = GetModule<auto_graph_cpp>()->interpreters[1]->Execute(callable, mergedArgs, kwargs);
+
+		// PyObject* result = PyObject_Call(callable, mergedArgs, kwargs);
 		Py_DECREF(mergedArgs);
 
 		if (!result)

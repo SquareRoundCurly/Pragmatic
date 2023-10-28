@@ -6,12 +6,17 @@
 
 // auto_graph
 #include "Out.hpp"
+#include "PyRuntime/MainInterpreter.hpp"
+#include "PyRuntime/SubInterpreter.hpp"
 
 namespace Pragmatic::auto_graph
 {
 	auto_graph_cpp::auto_graph_cpp()
 	{
 		Out() << "[auto_graph] " << "Main module constructor" << std::endl;
+
+		interpreters.push_back(MainInterpreter::Get());
+		interpreters.push_back(new SubInterpreter());
 	}
 
 	PyObject* auto_graph_cpp::cleanup(PyObject* self, PyObject* args)

@@ -21,7 +21,7 @@ namespace Pragmatic::auto_graph
 	static PyMethodDef PyTask_methods[] =
 	{
 		{ "exec", (PyCFunction)PyTask::MethodKw<&Task::Exec>, METH_VARARGS | METH_KEYWORDS, "Executes the stored callable." },
-		{ nullptr }  // sentinel
+		{ nullptr } // sentinel
 	};
 
 	static PyTypeObject PyType_Pragmatic_auto_graph_Task =
