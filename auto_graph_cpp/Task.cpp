@@ -125,15 +125,17 @@ namespace Pragmatic::auto_graph
 		if (args) Py_DECREF(args);
 	}
 
-	PyObject* Task::Exec(PyObject* self, PyObject* args)
+	PyObject* Task::Exec(PyObject* self, PyObject* args, PyObject* kwargs)
 	{
 		auto* mergedArgs = merge_tuples(this->args, args);
+
+		PyObject_Print(args, stdout, 0);
 
 		PyObject* funcCode = PyFunction_GetCode(callable);
 		if (!funcCode)
 		{
 			Py_DECREF(mergedArgs);
-			return NULL;  // Not a function or other error.
+			return NULL; // Not a function or other error.
 		}
 		PyCodeObject* codeObj = (PyCodeObject*)funcCode;
 
@@ -161,7 +163,8 @@ namespace Pragmatic::auto_graph
 			mergedArgs = slicedArgs;
 		}
 
-		PyObject* result = PyObject_CallObject(callable, mergedArgs);
+		PyObject* result = PyObject_Call(callable, mergedArgs, kwargs);
+		// PyObject* result = PyObject_CallObject(callable, mergedArgs);
 		Py_DECREF(mergedArgs);
 
 		if (!result)

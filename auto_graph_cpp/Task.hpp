@@ -18,7 +18,7 @@ namespace Pragmatic::auto_graph
 		virtual void PyClassDestruct(PyClass* self) override;
 
 		public:
-		PyObject* Exec(PyObject* self, PyObject* args);
+		PyObject* Exec(PyObject* self, PyObject* args, PyObject* kwargs);
 
 		private:
 		PyObject* callable = nullptr;

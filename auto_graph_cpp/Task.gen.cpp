@@ -9,13 +9,18 @@
 #include "PyRuntime/ClassRegistry.hpp"
 #include "Out.hpp"
 
+static PyObject* test(PyObject*, PyObject*, PyObject*)
+{
+	return NULL;
+}
+
 namespace Pragmatic::auto_graph
 {
 	using PyTask = PyClassWrapper<Task>;
 
 	static PyMethodDef PyTask_methods[] =
 	{
-		{ "exec", (PyCFunction)PyTask::Method<&Task::Exec>, METH_VARARGS, "Executes the stored callable." },
+		{ "exec", (PyCFunction)PyTask::MethodKw<&Task::Exec>, METH_VARARGS | METH_KEYWORDS, "Executes the stored callable." },
 		{ nullptr }  // sentinel
 	};
 
