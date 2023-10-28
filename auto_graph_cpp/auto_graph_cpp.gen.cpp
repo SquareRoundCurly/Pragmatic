@@ -8,14 +8,259 @@
 #include "PyRuntime/PyModule.hpp"
 #include "PyRuntime/PythonUtils.hpp"
 #include "PyRuntime/ClassRegistry.hpp"
+#include "PyRuntime/PythonUtils.hpp"
+
+static PyObject* internal_runner(PyObject* self, PyObject* args)
+{
+	PyObject* serialized_func;
+	PyObject* serialized_args;
+
+	if (!PyArg_ParseTuple(args, "OO", &serialized_func, &serialized_args))
+		return NULL;
+
+	// Load dill and its loads function
+	PyObject* dill_module = PyImport_ImportModule("dill");
+	if (!dill_module)
+		return NULL;
+
+	PyObject* loads_func = PyObject_GetAttrString(dill_module, "loads");
+	if (!loads_func)
+	{
+		Py_DECREF(dill_module);
+		return NULL;
+	}
+
+	PyObject* func = PyObject_CallFunctionObjArgs(loads_func, serialized_func, NULL);
+	PyObject* args_tuple = PyObject_CallFunctionObjArgs(loads_func, serialized_args, NULL);
+
+	// Check if deserialization was successful
+	if (!func || !args_tuple)
+	{
+		Py_XDECREF(func);
+		Py_XDECREF(args_tuple);
+		Py_DECREF(loads_func);
+		Py_DECREF(dill_module);
+		return NULL;
+	}
+
+	// Call the function
+	PyObject* result = PyObject_CallObject(func, args_tuple);
+
+	// Serialize the result
+	PyObject* dumps_func = PyObject_GetAttrString(dill_module, "dumps");
+	if (!dumps_func)
+	{
+		Py_DECREF(result);
+		Py_DECREF(func);
+		Py_DECREF(args_tuple);
+		Py_DECREF(loads_func);
+		Py_DECREF(dill_module);
+		return NULL;
+	}
+
+	PyObject* serialized_result = PyObject_CallFunctionObjArgs(dumps_func, result, NULL);
+
+	// Clean up
+	Py_DECREF(result);
+	Py_DECREF(func);
+	Py_DECREF(args_tuple);
+	Py_DECREF(dumps_func);
+	Py_DECREF(loads_func);
+	Py_DECREF(dill_module);
+
+	return serialized_result;
+}
+
+static PyMethodDef InternalRunnerMethod = {
+    "internal_runner",
+    (PyCFunction)internal_runner, 
+    METH_VARARGS, 
+    "Internal runner method."
+};
+
+namespace Pragmatic::auto_graph { PyObject* GetPyModule(PyObject* module = nullptr); }
+static PyObject* run_in_subprocess(PyObject* self, PyObject* args)
+{
+	PyObject* func;
+	PyObject* args_tuple;
+	
+	// Parse the first argument as the callable.
+	func = PyTuple_GetItem(args, 0);  // Note: This doesn't increase the reference count.
+	if (!PyCallable_Check(func))
+	{
+		PyErr_SetString(PyExc_TypeError, "First argument must be callable");
+		return NULL;
+	}
+	Py_INCREF(func);
+
+	// Create a new tuple for the rest of the arguments.
+	args_tuple = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
+	if (args_tuple != NULL)
+	{
+		args_tuple = Pragmatic::auto_graph::ensure_tuple(args_tuple);
+		
+		Py_INCREF(args_tuple);
+	}
+
+	// Load dill and its functions
+	PyObject* dill_module = PyImport_ImportModule("dill");
+	if (!dill_module)
+		return NULL;
+
+	PyObject* dumps_func = PyObject_GetAttrString(dill_module, "dumps");
+	PyObject* loads_func = PyObject_GetAttrString(dill_module, "loads");
+
+	if (!dumps_func || !loads_func)
+	{
+		Py_XDECREF(dumps_func);
+		Py_XDECREF(loads_func);
+		Py_DECREF(dill_module);
+		return NULL;
+	}
+
+	// Serialize the function and arguments
+	PyObject* serialized_func = PyObject_CallFunctionObjArgs(dumps_func, func, NULL);
+	PyObject* serialized_args = PyObject_CallFunctionObjArgs(dumps_func, args_tuple, NULL);
+
+	// Use multiprocessing.Pool to run internal_runner
+	PyObject* multiprocessing_module = PyImport_ImportModule("multiprocessing");
+	if (!multiprocessing_module)
+	{
+		Py_DECREF(serialized_func);
+		Py_DECREF(serialized_args);
+		Py_DECREF(dumps_func);
+		Py_DECREF(loads_func);
+		Py_DECREF(dill_module);
+		return NULL;
+	}
+
+	// PyObject* cfunc_internal_runner = PyCFunction_New(&InternalRunnerMethod, NULL);
+	// if (!cfunc_internal_runner)
+	// {
+	// 	return NULL;
+	// }
+
+	const char* modulePath = "auto_graph/__private";
+	const char* moduleName = "auto_graph_cpp";
+
+	PyObject* sysModule = PyImport_ImportModule("sys");
+	if (!sysModule)
+		return NULL;
+
+	// Get sys.path
+	PyObject* sysPath = PyObject_GetAttrString(sysModule, "path");
+	if (!sysPath)
+	{
+		Py_DECREF(sysModule);
+		return NULL;
+	}
+
+	PyObject* pyModulePath = PyUnicode_FromString(modulePath);
+	if (!pyModulePath)
+	{
+		Py_DECREF(sysPath);
+		Py_DECREF(sysModule);
+		return NULL;
+	}
+
+	if (PyList_Append(sysPath, pyModulePath) == -1)
+	{
+		Py_DECREF(pyModulePath);
+		Py_DECREF(sysPath);
+		Py_DECREF(sysModule);
+		return NULL;
+	}
+
+	Py_DECREF(pyModulePath);
+	Py_DECREF(sysPath);
+	Py_DECREF(sysModule);
+
+	PyObject* module = PyImport_ImportModule(moduleName);
+	if (!module)
+		return NULL;
+
+	PyObject* module_dict = PyModule_GetDict(module);
+	PyObject* key, *value;
+	Py_ssize_t pos = 0;
+
+	while (PyDict_Next(module_dict, &pos, &key, &value)) {
+		PyObject_Print(key, stdout, 0);
+		PyObject_Print(value, stdout, 0);
+		if (PyCallable_Check(value)) {
+			const char* func_name = PyUnicode_AsUTF8(key);
+			printf("Function name: %s\n", func_name);
+		}
+	}
+
+	Py_DECREF(module);
+
+	// PyObject* module = PyImport_ImportModule("auto_graph_cpp");
+	// if (!module)
+	// 	return NULL;
+
+	PyObject* cfunc_internal_runner = PyObject_GetAttrString(module, "internal_runner");
+	if (!cfunc_internal_runner)
+	{
+		Py_DECREF(module);
+		return NULL;
+	}
+
+	PyObject* Pool = PyObject_GetAttrString(multiprocessing_module, "Pool");
+	PyObject* pool = PyObject_CallFunction(Pool, "i", 1);  // Create a pool with one process
+
+	PyObject* func_args_tuple = PyTuple_Pack(2, serialized_func, serialized_args);
+	if (!func_args_tuple)
+	{
+		return NULL;
+	}
+
+	PyObject* serialized_result = PyObject_CallMethod(pool, "apply", "OO", cfunc_internal_runner, func_args_tuple);
+
+	// Deserialize the result
+	PyObject* result = PyObject_CallFunctionObjArgs(loads_func, serialized_result, NULL);
+
+	PyObject* close_method = PyObject_GetAttrString(pool, "close");
+	if (close_method) {
+		PyObject_CallObject(close_method, NULL);
+		Py_DECREF(close_method);
+	}
+
+	PyObject* join_method = PyObject_GetAttrString(pool, "join");
+	if (join_method) {
+		PyObject_CallObject(join_method, NULL);
+		Py_DECREF(join_method);
+	}
+
+	// Clean up
+	
+	Py_DECREF(func_args_tuple);
+	Py_DECREF(serialized_func);
+	Py_DECREF(serialized_args);
+	Py_DECREF(serialized_result);
+	Py_DECREF(dumps_func);
+	Py_DECREF(loads_func);
+	Py_DECREF(dill_module);
+	Py_DECREF(multiprocessing_module);
+	Py_DECREF(Pool);
+	Py_DECREF(pool);
+	Py_DECREF(cfunc_internal_runner);
+
+	return result;
+}
 
 namespace Pragmatic::auto_graph
 {
-	template <>
-	auto_graph_cpp* GetModule(PyObject* module)
+	PyObject* GetPyModule(PyObject* module)
 	{
 		static PyObject* pyModule = nullptr;
 		if (!pyModule) pyModule = module;
+		return pyModule;
+	}
+
+	template <>
+	auto_graph_cpp* GetModule(PyObject* module)
+	{
+		auto* pyModule = GetPyModule(module);
 		return reinterpret_cast<auto_graph_cpp*>(PyModule_GetState((PyObject*)pyModule));
 	}
 
@@ -26,6 +271,10 @@ namespace Pragmatic::auto_graph
 		{ "print",   method<auto_graph_cpp, &auto_graph_cpp::print>,    METH_VARARGS, "A thread safe print function"                                   },
 		{ "task",    method<auto_graph_cpp, &auto_graph_cpp::add_task>, METH_VARARGS, "Python functions to add to the executor pool"                   },
 		{ "exec",    method<auto_graph_cpp, &auto_graph_cpp::exec>,     METH_VARARGS, "Execute added tasks"                                            },
+		
+		{ "internal_runner", internal_runner, METH_VARARGS, "Internal runner for multiprocess runners" },
+		{ "run_in_subprocess", run_in_subprocess, METH_VARARGS, "Runs callables in multiprocessing" },
+		
 		{ NULL, NULL, 0, NULL }
 	};
 

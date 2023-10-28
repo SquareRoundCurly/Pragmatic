@@ -8,6 +8,8 @@
 #include "Out.hpp"
 #include "PyRuntime/MainInterpreter.hpp"
 #include "PyRuntime/SubInterpreter.hpp"
+#include "PyRuntime/ProcessInterpreter.hpp"
+#include "PyRuntime/PythonUtils.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -17,6 +19,7 @@ namespace Pragmatic::auto_graph
 
 		interpreters.push_back(MainInterpreter::Get());
 		interpreters.push_back(new SubInterpreter());
+		interpreters.push_back(new ProcessInterpreter());
 	}
 
 	PyObject* auto_graph_cpp::cleanup(PyObject* self, PyObject* args)

@@ -37,7 +37,7 @@ namespace Pragmatic::auto_graph
 	template <class ModuleClass>
 	int traverse(PyObject* module, visitproc visit, void* arg)
 	{
-		return GetModule<ModuleClass>()->traverse(module, visit, arg);
+		return GetModule<ModuleClass>(module)->traverse(module, visit, arg);
 	}
 
 	template <class ModuleClass>
