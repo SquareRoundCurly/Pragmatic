@@ -34,6 +34,7 @@ namespace Pragmatic::auto_graph
 	
 	PyRef::~PyRef()
 	{
+		Out() << "~PyRef" << std::endl;
 		Py_XDECREF(obj);
 	}
 

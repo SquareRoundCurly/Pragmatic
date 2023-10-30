@@ -63,59 +63,59 @@ namespace Pragmatic::auto_graph
 
 	PyObject* ProcessInterpreter::Execute(PyObject* callable, PyObject* args, PyObject* kwArgs)
 	{
-		PyObject* dill_module = PyImport_ImportModule("dill");
+		PyRef dill_module = PyImport_ImportModule("dill");
 		if (!dill_module) return NULL;
 
-		PyObject* dumps_func = PyObject_GetAttrString(dill_module, "dumps");
+		PyRef dumps_func = PyObject_GetAttrString(dill_module, "dumps");
 		if (!dumps_func) {
 			Py_DECREF(dill_module);
 			return NULL;
 		}
 
-		PyObject* serialized_callable = PyObject_CallFunctionObjArgs(dumps_func, callable, NULL);
-		PyObject* serialized_args = PyObject_CallFunctionObjArgs(dumps_func, args, NULL);
+		PyRef serialized_callable = PyObject_CallFunctionObjArgs(dumps_func, callable, NULL);
+		PyRef serialized_args = PyObject_CallFunctionObjArgs(dumps_func, args, NULL);
 		
 		if (!serialized_callable || !serialized_args)
 		{
-			Py_XDECREF(serialized_callable);
-			Py_XDECREF(serialized_args);
-			Py_DECREF(dumps_func);
-			Py_DECREF(dill_module);
+			// Py_XDECREF(serialized_callable);
+			// Py_XDECREF(serialized_args);
+			// Py_DECREF(dumps_func);
+			// Py_DECREF(dill_module);
 			return NULL;
 		}
 		
-		PyObject* mp_module = PyImport_ImportModule("multiprocessing");
+		PyRef mp_module = PyImport_ImportModule("multiprocessing");
 		if (!mp_module)
 		{
-			Py_DECREF(serialized_callable);
-			Py_DECREF(serialized_args);
-			Py_DECREF(dumps_func);
-			Py_DECREF(dill_module);
+			// Py_DECREF(serialized_callable);
+			// Py_DECREF(serialized_args);
+			// Py_DECREF(dumps_func);
+			// Py_DECREF(dill_module);
 			return NULL;
 		}
 
-		PyObject* Pool_class = PyObject_GetAttrString(mp_module, "Pool");
-		PyObject* pool = PyObject_CallObject(Pool_class, NULL);
+		PyRef Pool_class = PyObject_GetAttrString(mp_module, "Pool");
+		PyRef pool = PyObject_CallObject(Pool_class, NULL);
 		if (!pool)
 		{
-			Py_DECREF(serialized_callable);
-			Py_DECREF(serialized_args);
-			Py_DECREF(dumps_func);
-			Py_DECREF(dill_module);
-			Py_DECREF(Pool_class);
-			Py_DECREF(mp_module);
+			// Py_DECREF(serialized_callable);
+			// Py_DECREF(serialized_args);
+			// Py_DECREF(dumps_func);
+			// Py_DECREF(dill_module);
+			// Py_DECREF(Pool_class);
+			// Py_DECREF(mp_module);
 			return NULL;
 		}
 
-		PyObject* result = PyObject_CallMethod(pool, "apply", "OOO", runner, serialized_callable, serialized_args);
+		PyObject* result = PyObject_CallMethod(pool.get(), "apply", "OOO", runner, serialized_callable.get(), serialized_args.get());
 
-		Py_DECREF(serialized_callable);
-		Py_DECREF(serialized_args);
-		Py_DECREF(dumps_func);
-		Py_DECREF(dill_module);
-		Py_DECREF(Pool_class);
-		Py_DECREF(pool);
-		Py_DECREF(mp_module);
+		// Py_DECREF(serialized_callable);
+		// Py_DECREF(serialized_args);
+		// Py_DECREF(dumps_func);
+		// Py_DECREF(dill_module);
+		// Py_DECREF(Pool_class);
+		// Py_DECREF(pool);
+		// Py_DECREF(mp_module);
 
 		return result;
 	}
