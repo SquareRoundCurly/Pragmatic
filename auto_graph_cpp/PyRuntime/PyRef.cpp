@@ -1,6 +1,8 @@
 // Source header
 #include "PyRef.hpp"
 
+#include "../Out.hpp"
+
 namespace Pragmatic::auto_graph
 {
 	PyRef::PyRef() : obj(nullptr)

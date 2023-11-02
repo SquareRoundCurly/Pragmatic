@@ -9,6 +9,7 @@
 #include "auto_graph_cpp.hpp"
 #include "PyRuntime/PyModule.hpp"
 #include "PyRuntime/PythonUtils.hpp"
+#include "PyRuntime/PyRef.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -63,14 +64,13 @@ namespace Pragmatic::auto_graph
 
 	PyObject* Task::Exec(PyObject* self, PyObject* args, PyObject* kwargs)
 	{
-		auto* mergedArgs = merge_tuples(this->args, args);
+		PyRef mergedArgs = merge_tuples(this->args, args);
 
 		PyObject_Print(args, stdout, 0);
 
 		PyObject* funcCode = PyFunction_GetCode(callable);
 		if (!funcCode)
 		{
-			Py_DECREF(mergedArgs);
 			return NULL; // Not a function or other error.
 		}
 		PyCodeObject* codeObj = (PyCodeObject*)funcCode;
@@ -85,7 +85,6 @@ namespace Pragmatic::auto_graph
 		if (providedArgsCount < (expectedArgsCount - defaultArgsCount))
 		{
 			PyErr_SetString(PyExc_TypeError, "Not enough arguments provided");
-			Py_DECREF(mergedArgs);
 			return NULL;
 		}
 
@@ -95,14 +94,10 @@ namespace Pragmatic::auto_graph
 		if (!hasVarArgs && !hasKeywordArgs && providedArgsCount > expectedArgsCount)
 		{
 			PyObject* slicedArgs = PyTuple_GetSlice(mergedArgs, 0, expectedArgsCount);
-			Py_DECREF(mergedArgs);
 			mergedArgs = slicedArgs;
 		}
 
-		PyObject* result = GetModule<auto_graph_cpp>()->interpreters[2]->Execute(callable, mergedArgs, kwargs);
-
-		// PyObject* result = PyObject_Call(callable, mergedArgs, kwargs);
-		Py_DECREF(mergedArgs);
+		PyObject* result = GetModule<auto_graph_cpp>()->interpreters[0]->Execute(callable, mergedArgs, kwargs);
 
 		if (!result)
 		{

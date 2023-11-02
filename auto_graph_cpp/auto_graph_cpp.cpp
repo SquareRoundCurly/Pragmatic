@@ -10,6 +10,7 @@
 #include "PyRuntime/SubInterpreter.hpp"
 #include "PyRuntime/ProcessInterpreter.hpp"
 #include "PyRuntime/PythonUtils.hpp"
+#include "PyRuntime/PyRef.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -45,7 +46,7 @@ namespace Pragmatic::auto_graph
 			return NULL;
 		}
 
-		PyObject* str_obj = PyObject_Str(obj); // Get the string representation of the object
+		PyRef str_obj = PyObject_Str(obj); // Get the string representation of the object
 		if (!str_obj)
 		{
 			return NULL;  // PyObject_Str failed.
@@ -60,7 +61,6 @@ namespace Pragmatic::auto_graph
 
 		Out() << str << std::endl;
 
-		Py_DECREF(str_obj);  // Decrement the reference count of the string object
 		Py_RETURN_NONE;
 	}
 
