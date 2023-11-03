@@ -97,7 +97,7 @@ namespace Pragmatic::auto_graph
 			mergedArgs = slicedArgs;
 		}
 
-		PyObject* result = GetModule<auto_graph_cpp>()->interpreters[0]->Execute(callable, mergedArgs, kwargs);
+		PyObject* result = GetModule<auto_graph_cpp>()->interpreters[2]->Execute(callable, mergedArgs, kwargs);
 
 		if (!result)
 		{

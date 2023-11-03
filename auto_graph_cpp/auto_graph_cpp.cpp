@@ -80,18 +80,16 @@ namespace Pragmatic::auto_graph
 
 	PyObject* auto_graph_cpp::exec(PyObject* self, PyObject* args)
 	{
-		for (PyObject* task : tasks)
+		for (PyRef task : tasks)
 		{
 			if (PyCallable_Check(task))
 			{
-				PyObject* result = PyObject_CallObject(task, nullptr);
+				PyRef result = PyObject_CallObject(task, nullptr);
 				if (!result)
 				{
 					PyErr_Print();
 				}
-				Py_XDECREF(result);
 			}
-			Py_DECREF(task);
 		}
 		tasks.clear();
 
