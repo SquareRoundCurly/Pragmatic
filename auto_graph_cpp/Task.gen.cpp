@@ -9,11 +9,6 @@
 #include "PyRuntime/ClassRegistry.hpp"
 #include "Out.hpp"
 
-static PyObject* test(PyObject*, PyObject*, PyObject*)
-{
-	return NULL;
-}
-
 namespace Pragmatic::auto_graph
 {
 	using PyTask = PyClassWrapper<Task>;

@@ -17,8 +17,9 @@ static PyObject* internal_runner(PyObject* self, PyObject* args)
 
 	PyObject* serialized_func;
 	PyObject* serialized_args;
+	PyObject* serialized_kw_args;
 
-	if (!PyArg_ParseTuple(args, "OO", &serialized_func, &serialized_args))
+	if (!PyArg_ParseTuple(args, "OOO", &serialized_func, &serialized_args, &serialized_kw_args))
 		return NULL;
 
 	// Load dill and its loads function
@@ -34,6 +35,7 @@ static PyObject* internal_runner(PyObject* self, PyObject* args)
 
 	PyRef func = PyObject_CallFunctionObjArgs(loads_func, serialized_func, NULL);
 	PyRef args_tuple = PyObject_CallFunctionObjArgs(loads_func, serialized_args, NULL);
+	PyRef kw_args = PyObject_CallFunctionObjArgs(loads_func, serialized_kw_args, NULL);
 
 	// Check if deserialization was successful
 	if (!func || !args_tuple)
@@ -42,7 +44,7 @@ static PyObject* internal_runner(PyObject* self, PyObject* args)
 	}
 
 	// Call the function
-	PyRef result = PyObject_CallObject(func, args_tuple);
+	PyRef result = PyObject_Call(func, args_tuple, kw_args);
 
 	// Serialize the result
 	PyRef dumps_func = PyObject_GetAttrString(dill_module, "dumps");
@@ -57,7 +59,7 @@ static PyObject* internal_runner(PyObject* self, PyObject* args)
 }
 
 namespace Pragmatic::auto_graph { PyObject* GetPyModule(PyObject* module = nullptr); }
-static PyObject* run_in_subprocess(PyObject* self, PyObject* args)
+static PyObject* run_in_subprocess(PyObject* self, PyObject* args, PyObject* kwArgs)
 {
 	using namespace Pragmatic::auto_graph;
 
@@ -82,6 +84,8 @@ static PyObject* run_in_subprocess(PyObject* self, PyObject* args)
 		Py_INCREF(args_tuple);
 	}
 
+	PyObject_Print(args_tuple, stdout, 0);
+
 	// Load dill and its functions
 	PyRef dill_module = PyImport_ImportModule("dill");
 	if (!dill_module)
@@ -98,6 +102,14 @@ static PyObject* run_in_subprocess(PyObject* self, PyObject* args)
 	// Serialize the function and arguments
 	PyRef serialized_func = PyObject_CallFunctionObjArgs(dumps_func, func, NULL);
 	PyRef serialized_args = PyObject_CallFunctionObjArgs(dumps_func, args_tuple, NULL);
+	PyRef serialized_kw_args;
+	if (kwArgs)
+		serialized_kw_args = PyObject_CallFunctionObjArgs(dumps_func, kwArgs, NULL);
+	else
+	{
+		PyRef emptyDict = PyDict_New();
+		serialized_kw_args = PyObject_CallFunctionObjArgs(dumps_func, emptyDict.get(), NULL);
+	}
 
 	// Use multiprocessing.Pool to run internal_runner
 	PyRef multiprocessing_module = PyImport_ImportModule("multiprocessing");
@@ -159,11 +171,13 @@ static PyObject* run_in_subprocess(PyObject* self, PyObject* args)
 	PyRef Pool = PyObject_GetAttrString(multiprocessing_module, "Pool");
 	PyRef pool = PyObject_CallFunction(Pool, "i", 1);  // Create a pool with one process
 
-	PyRef func_args_tuple = PyTuple_Pack(2, serialized_func.get(), serialized_args.get());
+	PyRef func_args_tuple = PyTuple_Pack(3, serialized_func.get(), serialized_args.get(), serialized_kw_args.get());
 	if (!func_args_tuple)
 	{
 		return NULL;
 	}
+
+	PyObject_Print(func_args_tuple, stdout, 0);
 
 	PyRef serialized_result = PyObject_CallMethod(pool, "apply", "OO", cfunc_internal_runner.get(), func_args_tuple.get());
 
@@ -212,7 +226,7 @@ namespace Pragmatic::auto_graph
 		{ "exec",    method<auto_graph_cpp, &auto_graph_cpp::exec>,     METH_VARARGS, "Execute added tasks"                                            },
 		
 		{ "internal_runner", internal_runner, METH_VARARGS, "Internal runner for multiprocess runners" },
-		{ "run_in_subprocess", run_in_subprocess, METH_VARARGS, "Runs callables in multiprocessing" },
+		{ "run_in_subprocess", (PyCFunction)run_in_subprocess, METH_VARARGS | METH_KEYWORDS, "Runs callables in multiprocessing" },
 		
 		{ NULL, NULL, 0, NULL }
 	};
