@@ -1,6 +1,9 @@
 // Source header
 #include "PyRef.hpp"
 
+// External
+#include "Python.h"
+
 // auto_graph
 #include "../Out.hpp"
 
@@ -45,5 +48,10 @@ namespace Pragmatic::auto_graph
 	{
 		Py_XDECREF(obj);
 		obj = newObj;
+	}
+	
+	void PyRef::IncRef()
+	{
+		Py_INCREF(obj);
 	}
 } // namespace Pragmatic::auto_graph

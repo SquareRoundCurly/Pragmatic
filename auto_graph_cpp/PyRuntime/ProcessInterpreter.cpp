@@ -8,6 +8,8 @@
 #include "PyRef.hpp"
 #include "PythonUtils.hpp"
 
+#include "../PyNative/Module.hpp"
+
 namespace Pragmatic::auto_graph
 {
 	ProcessInterpreter::ProcessInterpreter()
@@ -22,27 +24,20 @@ namespace Pragmatic::auto_graph
 
 	PyObject* ProcessInterpreter::Execute(PyObject* callable, PyObject* args, PyObject* kwArgs)
 	{
-		// Load dill and its functions
-		PyRef dill_module = PyImport_ImportModule("dill");
-		if (!dill_module)
-			return NULL;
-
-		PyRef dumps_func = PyObject_GetAttrString(dill_module, "dumps");
-		PyRef loads_func = PyObject_GetAttrString(dill_module, "loads");
-
-		if (!dumps_func || !loads_func)
-			return NULL;
+		auto dill = Module("dill");
+		auto dumps = dill["dumps"];
+		auto loads = dill["loads"];
 
 		// Serialize the function and arguments
-		PyRef serialized_func = PyObject_CallFunctionObjArgs(dumps_func, callable, NULL);
-		PyRef serialized_args = PyObject_CallFunctionObjArgs(dumps_func, args, NULL);
+		PyRef serialized_func = dumps(callable);
+		PyRef serialized_args = dumps(args);
 		PyRef serialized_kw_args;
 		if (kwArgs)
-			serialized_kw_args = PyObject_CallFunctionObjArgs(dumps_func, kwArgs, NULL);
+			serialized_kw_args = dumps(kwArgs);
 		else
 		{
 			PyRef emptyDict = PyDict_New();
-			serialized_kw_args = PyObject_CallFunctionObjArgs(dumps_func, emptyDict.get(), NULL);
+			serialized_kw_args = dumps(emptyDict);
 		}
 
 		// Use multiprocessing.Pool to run internal_runner
@@ -104,7 +99,9 @@ namespace Pragmatic::auto_graph
 		PyRef serialized_result = PyObject_CallMethod(pool, "apply", "OO", cfunc_internal_runner.get(), func_args_tuple.get());
 
 		// Deserialize the result
-		PyObject* result = PyObject_CallFunctionObjArgs(loads_func, serialized_result.get(), NULL);
+		auto result = loads(serialized_result);
+		result.IncRef();
+		// PyObject* result = PyObject_CallFunctionObjArgs(loads, serialized_result.get(), NULL);
 
 		// Close the process
 		PyObject* close_method = PyObject_GetAttrString(pool, "close");

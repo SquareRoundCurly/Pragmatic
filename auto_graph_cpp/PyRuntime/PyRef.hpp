@@ -1,7 +1,7 @@
 #pragma once
 
 // External
-#include "Python.h"
+#include "pytypedefs.h"
 
 namespace Pragmatic::auto_graph
 {
@@ -23,13 +23,14 @@ namespace Pragmatic::auto_graph
 		PyRef& operator=(const PyRef&) = delete;
 
 		public: // Getters
-		inline PyObject* get() const        { return obj; }
+		inline PyObject* get()        const { return obj; }
 		inline PyObject* operator->() const { return obj; }
 		inline PyObject*& operator*()       { return obj; }
-		inline operator PyObject*() const   { return obj; } // Implicit cast to PyObject*
+		inline operator PyObject*()   const { return obj; } // Implicit cast to PyObject*
 
 		public: // Utility
 		inline bool is_null() const { return obj == nullptr; }
 		void reset(PyObject* newObj = nullptr);
+		void IncRef();
 	};
 } // namespace Pragmatic::atuo_graph

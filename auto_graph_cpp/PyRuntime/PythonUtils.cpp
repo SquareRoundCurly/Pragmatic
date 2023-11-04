@@ -73,4 +73,13 @@ namespace Pragmatic::auto_graph
 
 		return merged;
 	}
+
+	void ThrowPythonError(const std::string& message)
+	{
+		if (!PyErr_Occurred())
+		{
+			// Set the Python exception if there isn't already one set
+			PyErr_SetString(PyExc_RuntimeError, message.c_str());
+		}
+	}
 } // namespace Pragmatic::auto_graph
