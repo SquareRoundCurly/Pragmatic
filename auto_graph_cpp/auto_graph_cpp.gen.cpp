@@ -51,7 +51,7 @@ static PyObject* internal_runner(PyObject* self, PyObject* args)
 		return NULL;
 	}
 
-	PyObject* serialized_result = PyObject_CallFunctionObjArgs(dumps_func, result, NULL);
+	PyObject* serialized_result = PyObject_CallFunctionObjArgs(dumps_func, result.get(), NULL);
 
 	return serialized_result;
 }
@@ -157,16 +157,16 @@ static PyObject* run_in_subprocess(PyObject* self, PyObject* args)
 	PyRef Pool = PyObject_GetAttrString(multiprocessing_module, "Pool");
 	PyRef pool = PyObject_CallFunction(Pool, "i", 1);  // Create a pool with one process
 
-	PyRef func_args_tuple = PyTuple_Pack(2, serialized_func, serialized_args);
+	PyRef func_args_tuple = PyTuple_Pack(2, serialized_func.get(), serialized_args.get());
 	if (!func_args_tuple)
 	{
 		return NULL;
 	}
 
-	PyRef serialized_result = PyObject_CallMethod(pool, "apply", "OO", cfunc_internal_runner, func_args_tuple);
+	PyRef serialized_result = PyObject_CallMethod(pool, "apply", "OO", cfunc_internal_runner.get(), func_args_tuple.get());
 
 	// Deserialize the result
-	PyObject* result = PyObject_CallFunctionObjArgs(loads_func, serialized_result, NULL);
+	PyObject* result = PyObject_CallFunctionObjArgs(loads_func, serialized_result.get(), NULL);
 
 	PyObject* close_method = PyObject_GetAttrString(pool, "close");
 	if (close_method) {
