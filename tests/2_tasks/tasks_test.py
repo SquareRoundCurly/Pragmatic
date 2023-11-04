@@ -68,9 +68,9 @@ class TasksTest(unittest.TestCase):
 		result = t.exec(3, 4, 5)
 		self.assertEqual(result, 15)
 
-	# def test_9_callable_with_kwargs(self):
-	# 	def kwargs_func(a, b=2, **kwargs):
-	# 		return a + b + kwargs.get('c', 0)
-	# 	t = auto_graph.Task(kwargs_func, 1)
-	# 	result = t.exec(b=3, c=4)
-	# 	self.assertEqual(result, 8)
+	def test_9_callable_with_kwargs(self):
+		def kwargs_func(a, b=2, **kwargs):
+			return a + b + kwargs.get('c', 0)
+		t = auto_graph.Task(kwargs_func, 1)
+		result = t.exec(b=3, c=4)
+		self.assertEqual(result, 8)

@@ -36,6 +36,14 @@ namespace Pragmatic::auto_graph
 		// Serialize the function and arguments
 		PyRef serialized_func = PyObject_CallFunctionObjArgs(dumps_func, callable, NULL);
 		PyRef serialized_args = PyObject_CallFunctionObjArgs(dumps_func, args, NULL);
+		PyRef serialized_kw_args;
+		if (kwArgs)
+			serialized_kw_args = PyObject_CallFunctionObjArgs(dumps_func, kwArgs, NULL);
+		else
+		{
+			PyRef emptyDict = PyDict_New();
+			serialized_kw_args = PyObject_CallFunctionObjArgs(dumps_func, emptyDict.get(), NULL);
+		}
 
 		// Use multiprocessing.Pool to run internal_runner
 		PyRef multiprocessing_module = PyImport_ImportModule("multiprocessing");
@@ -66,8 +74,7 @@ namespace Pragmatic::auto_graph
 			return NULL;
 
 		PyObject* module_dict = PyModule_GetDict(module);
-		PyObject* key; 
-		PyObject* value;
+		PyObject* key, *value;
 		Py_ssize_t pos = 0;
 
 		while (PyDict_Next(module_dict, &pos, &key, &value))
@@ -89,7 +96,7 @@ namespace Pragmatic::auto_graph
 		PyRef Pool = PyObject_GetAttrString(multiprocessing_module, "Pool");
 		PyRef pool = PyObject_CallFunction(Pool, "i", 1);  // Create a pool with one process
 
-		PyRef func_args_tuple = PyTuple_Pack(2, serialized_func.get(), serialized_args.get());
+		PyRef func_args_tuple = PyTuple_Pack(3, serialized_func.get(), serialized_args.get(), serialized_kw_args.get());
 		if (!func_args_tuple)
 			return NULL;
 

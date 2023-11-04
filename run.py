@@ -16,7 +16,7 @@ def run_in_subprocess(func, *args, **kwargs):
 	serialized_args = dill.dumps(args)
 	serialized_kwargs = dill.dumps(kwargs)
 	
-	with Pool(1) as pool:  # creates a pool with one process
+	with Pool(1) as pool: # creates a pool with one process
 		serialized_result = pool.apply(_internal_runner, (serialized_func, serialized_args, serialized_kwargs))
 	
 	return dill.loads(serialized_result)
