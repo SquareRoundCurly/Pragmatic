@@ -6,38 +6,7 @@
 
 // auto_graph
 #include "PyRef.hpp"
-
-static PyObject* runner(PyObject* self, PyObject* args)
-{
-	using namespace Pragmatic::auto_graph;
-
-	PyObject* serialized_callable;
-	PyObject* serialized_args;
-	if (!PyArg_ParseTuple(args, "OO", &serialized_callable, &serialized_args))
-	{
-		return NULL;
-	}
-
-	PyRef dill_module = PyImport_ImportModule("dill");
-	if (!dill_module) return NULL;
-
-	PyRef loads_func = PyObject_GetAttrString(dill_module, "loads");
-	if (!loads_func)
-	{
-		return NULL;
-	}
-
-	PyRef callable = PyObject_CallFunctionObjArgs(loads_func, serialized_callable, NULL);
-	PyRef args_tuple = PyObject_CallFunctionObjArgs(loads_func, serialized_args, NULL);
-	if (!callable || !args_tuple)
-	{
-		return NULL;
-	}
-
-	PyObject* result = PyObject_CallObject(callable, args_tuple);
-
-	return result;
-}
+#include "PythonUtils.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -53,37 +22,97 @@ namespace Pragmatic::auto_graph
 
 	PyObject* ProcessInterpreter::Execute(PyObject* callable, PyObject* args, PyObject* kwArgs)
 	{
+		// Load dill and its functions
 		PyRef dill_module = PyImport_ImportModule("dill");
-		if (!dill_module) return NULL;
+		if (!dill_module)
+			return NULL;
 
 		PyRef dumps_func = PyObject_GetAttrString(dill_module, "dumps");
-		if (!dumps_func) {
-			Py_DECREF(dill_module);
-			return NULL;
-		}
+		PyRef loads_func = PyObject_GetAttrString(dill_module, "loads");
 
-		PyRef serialized_callable = PyObject_CallFunctionObjArgs(dumps_func, callable, NULL);
+		if (!dumps_func || !loads_func)
+			return NULL;
+
+		// Serialize the function and arguments
+		PyRef serialized_func = PyObject_CallFunctionObjArgs(dumps_func, callable, NULL);
 		PyRef serialized_args = PyObject_CallFunctionObjArgs(dumps_func, args, NULL);
-		
-		if (!serialized_callable || !serialized_args)
-		{
+
+		// Use multiprocessing.Pool to run internal_runner
+		PyRef multiprocessing_module = PyImport_ImportModule("multiprocessing");
+		if (!multiprocessing_module)
 			return NULL;
-		}
-		
-		PyRef mp_module = PyImport_ImportModule("multiprocessing");
-		if (!mp_module)
-		{
+
+		const char* modulePath = "auto_graph/__private";
+		const char* moduleName = "auto_graph_cpp";
+
+		PyObject* sysModule = PyImport_ImportModule("sys");
+		if (!sysModule)
 			return NULL;
+
+		// Get sys.path
+		PyRef sysPath = PyObject_GetAttrString(sysModule, "path");
+		if (!sysPath)
+			return NULL;
+
+		PyRef pyModulePath = PyUnicode_FromString(modulePath);
+		if (!pyModulePath)
+			return NULL;
+
+		if (PyList_Append(sysPath, pyModulePath) == -1)
+			return NULL;
+
+		PyRef module = PyImport_ImportModule(moduleName);
+		if (!module)
+			return NULL;
+
+		PyObject* module_dict = PyModule_GetDict(module);
+		PyObject* key; 
+		PyObject* value;
+		Py_ssize_t pos = 0;
+
+		while (PyDict_Next(module_dict, &pos, &key, &value))
+		{
+			PyObject_Print(key, stdout, 0);
+			PyObject_Print(value, stdout, 0);
+			if (PyCallable_Check(value))
+			{
+				const char* func_name = PyUnicode_AsUTF8(key);
+				printf("Function name: %s\n", func_name);
+			}
 		}
 
-		PyRef Pool_class = PyObject_GetAttrString(mp_module, "Pool");
-		PyRef pool = PyObject_CallObject(Pool_class, NULL);
-		if (!pool)
-		{
+		// Get internal runner from new auto_graph_cpp instance
+		PyRef cfunc_internal_runner = PyObject_GetAttrString(module, "internal_runner");
+		if (!cfunc_internal_runner)
 			return NULL;
+
+		PyRef Pool = PyObject_GetAttrString(multiprocessing_module, "Pool");
+		PyRef pool = PyObject_CallFunction(Pool, "i", 1);  // Create a pool with one process
+
+		PyRef func_args_tuple = PyTuple_Pack(2, serialized_func.get(), serialized_args.get());
+		if (!func_args_tuple)
+			return NULL;
+
+		// Run task
+		PyRef serialized_result = PyObject_CallMethod(pool, "apply", "OO", cfunc_internal_runner.get(), func_args_tuple.get());
+
+		// Deserialize the result
+		PyObject* result = PyObject_CallFunctionObjArgs(loads_func, serialized_result.get(), NULL);
+
+		// Close the process
+		PyObject* close_method = PyObject_GetAttrString(pool, "close");
+		if (close_method)
+		{
+			PyObject_CallObject(close_method, NULL);
+			Py_DECREF(close_method);
 		}
 
-		PyObject* result = PyObject_CallMethod(pool.get(), "apply", "OOO", runner, serialized_callable.get(), serialized_args.get());
+		PyObject* join_method = PyObject_GetAttrString(pool, "join");
+		if (join_method)
+		{
+			PyObject_CallObject(join_method, NULL);
+			Py_DECREF(join_method);
+		}
 
 		return result;
 	}
