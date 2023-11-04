@@ -24,7 +24,6 @@ static PyObject* runner(PyObject* self, PyObject* args)
 	PyRef loads_func = PyObject_GetAttrString(dill_module, "loads");
 	if (!loads_func)
 	{
-		// Py_DECREF(dill_module);
 		return NULL;
 	}
 
@@ -32,19 +31,10 @@ static PyObject* runner(PyObject* self, PyObject* args)
 	PyRef args_tuple = PyObject_CallFunctionObjArgs(loads_func, serialized_args, NULL);
 	if (!callable || !args_tuple)
 	{
-		// Py_XDECREF(callable);
-		// Py_XDECREF(args_tuple);
-		// Py_DECREF(loads_func);
-		// Py_DECREF(dill_module);
 		return NULL;
 	}
 
 	PyObject* result = PyObject_CallObject(callable, args_tuple);
-
-	// Py_DECREF(callable);
-	// Py_DECREF(args_tuple);
-	// Py_DECREF(loads_func);
-	// Py_DECREF(dill_module);
 
 	return result;
 }

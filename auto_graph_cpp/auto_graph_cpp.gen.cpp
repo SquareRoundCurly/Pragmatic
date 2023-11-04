@@ -139,10 +139,12 @@ static PyObject* run_in_subprocess(PyObject* self, PyObject* args)
 	PyObject* key, *value;
 	Py_ssize_t pos = 0;
 
-	while (PyDict_Next(module_dict, &pos, &key, &value)) {
+	while (PyDict_Next(module_dict, &pos, &key, &value))
+	{
 		PyObject_Print(key, stdout, 0);
 		PyObject_Print(value, stdout, 0);
-		if (PyCallable_Check(value)) {
+		if (PyCallable_Check(value))
+		{
 			const char* func_name = PyUnicode_AsUTF8(key);
 			printf("Function name: %s\n", func_name);
 		}
@@ -169,13 +171,15 @@ static PyObject* run_in_subprocess(PyObject* self, PyObject* args)
 	PyObject* result = PyObject_CallFunctionObjArgs(loads_func, serialized_result.get(), NULL);
 
 	PyObject* close_method = PyObject_GetAttrString(pool, "close");
-	if (close_method) {
+	if (close_method)
+	{
 		PyObject_CallObject(close_method, NULL);
 		Py_DECREF(close_method);
 	}
 
 	PyObject* join_method = PyObject_GetAttrString(pool, "join");
-	if (join_method) {
+	if (join_method)
+	{
 		PyObject_CallObject(join_method, NULL);
 		Py_DECREF(join_method);
 	}
