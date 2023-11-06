@@ -1,28 +1,26 @@
 // Source header
 #include "ClassRegistry.hpp"
 
-// Standard library
-#include <vector>
-
 // External
 #include "Python.h"
 
 namespace Pragmatic::auto_graph
 {
-	struct PyClassType
+	std::vector<PyClassType>& Registry::GetTypes()
 	{
-		PyTypeObject& type;
-		const char* name;
-	};
-	static std::vector<PyClassType> types;
+		static std::vector<PyClassType> types;
+		return types;
+	}
 
 	void Registry::Register(PyTypeObject& type, const char* name)
 	{
+		auto& types = GetTypes();
 		types.push_back({type, name});
 	}
 
 	int Registry::RegisterTypes(PyObject* module)
 	{
+		auto& types = GetTypes();
 		for (const auto& type : types)
 		{
 			if (PyType_Ready(&type.type) < 0) return -1;
