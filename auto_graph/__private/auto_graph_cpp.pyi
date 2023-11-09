@@ -15,3 +15,6 @@ class Task():
 
 class Graph():
 	...
+
+class ScopeTimer():
+	...

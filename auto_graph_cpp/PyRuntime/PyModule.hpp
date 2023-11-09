@@ -8,6 +8,7 @@
 
 // auto_graph
 #include "ClassRegistry.hpp"
+#include "../Instrumentation.hpp"
 
 // Forward declarations
 typedef int (*visitproc)(PyObject *, void *);
@@ -20,6 +21,8 @@ namespace Pragmatic::auto_graph
 	template <class ModuleClass>
 	int init(PyObject *module)
 	{
+		PROFILE_BEGIN_SESSION("auto_graph.json");
+
 		// Placement new, call constructor
 		ModuleClass* moduleState = (ModuleClass*) PyModule_GetState(module);
 		new (moduleState) ModuleClass();
@@ -50,6 +53,8 @@ namespace Pragmatic::auto_graph
 	void free(void* module)
 	{
 		GetModule<ModuleClass>()->free(module);
+	
+		PROFILE_END_SESSION();
 	}
 
 	template <class ModuleClass, PyObject* (ModuleClass::*moduleMethod)(PyObject*, PyObject*)>
