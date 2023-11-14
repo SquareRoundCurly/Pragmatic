@@ -26,6 +26,15 @@ namespace Pragmatic::auto_graph
 		interpreters.push_back(new ProcessInterpreter());
 	}
 
+	auto_graph_cpp::~auto_graph_cpp()
+	{
+		Out() << "[auto_graph] " << "Main module destructor" << std::endl;
+
+		delete interpreters[1];
+		delete interpreters[2];
+		interpreters.clear();
+	}
+
 	PyObject* auto_graph_cpp::cleanup(PyObject* self, PyObject* args)
 	{
 		PROFILE_FUNCTION();

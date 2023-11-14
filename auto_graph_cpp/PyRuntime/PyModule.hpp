@@ -53,6 +53,8 @@ namespace Pragmatic::auto_graph
 	void free(void* module)
 	{
 		GetModule<ModuleClass>()->free(module);
+
+		GetModule<ModuleClass>()->~ModuleClass();
 	
 		PROFILE_END_SESSION();
 	}

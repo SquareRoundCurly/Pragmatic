@@ -16,6 +16,7 @@ namespace Pragmatic::auto_graph
 	{
 		public:
 		auto_graph_cpp();
+		~auto_graph_cpp();
 
 		public:
 		PyObject* cleanup(PyObject* self, PyObject* args);
