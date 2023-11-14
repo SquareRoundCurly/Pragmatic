@@ -8,7 +8,7 @@
 
 // auto_graph
 #include "ClassRegistry.hpp"
-#include "../Instrumentation.hpp"
+#include "../auto_graph_cpp/Instrumentation.hpp"
 
 // Forward declarations
 typedef int (*visitproc)(PyObject *, void *);

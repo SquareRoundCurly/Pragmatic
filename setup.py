@@ -106,9 +106,10 @@ def compile_args():
 
 auto_graph_cpp = Extension(
 	f'auto_graph.__private.auto_graph_cpp',
-	sources = glob_files(auto_graph_cpp_dir, 'cpp'),
-	depends = glob_files(auto_graph_cpp_dir, 'hpp'),
+	sources = glob_files(auto_graph_cpp_dir, 'cpp') + glob_files(project_dir.joinpath('PyRuntime'), 'cpp') + glob_files(project_dir.joinpath('PyNative'), 'cpp'),
+	depends = glob_files(auto_graph_cpp_dir, 'hpp') + glob_files(project_dir.joinpath('PyRuntime'), 'hpp') + glob_files(project_dir.joinpath('PyNative'), 'hpp'),
 	include_dirs = list(map(str, [
+		project_dir,
 		python_include_dir,
 		external_dir.joinpath('readerwriterqueue'),
 		external_dir.joinpath('concurrentqueue')

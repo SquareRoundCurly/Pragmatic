@@ -5,7 +5,7 @@
 #include "Python.h"
 
 // auto_graph
-#include "../Out.hpp"
+#include "../auto_graph_cpp/Out.hpp"
 
 namespace Pragmatic::auto_graph
 {

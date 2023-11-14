@@ -4,7 +4,7 @@
 #include "pytypedefs.h"
 
 // auto_graph
-#include "../PyRuntime/PyRef.hpp"
+#include "PyRuntime/PyRef.hpp"
 
 namespace Pragmatic::auto_graph
 {

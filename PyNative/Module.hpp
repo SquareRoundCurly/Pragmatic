@@ -4,7 +4,7 @@
 #include <string>
 
 // auto_graph
-#include "../PyRuntime/PyRef.hpp"
+#include "PyRuntime/PyRef.hpp"
 #include "Function.hpp"
 
 namespace Pragmatic::auto_graph

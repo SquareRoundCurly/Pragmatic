@@ -8,7 +8,7 @@
 #include "PyRef.hpp"
 #include "PythonUtils.hpp"
 
-#include "../PyNative/Module.hpp"
+#include "PyNative/Module.hpp"
 
 namespace Pragmatic::auto_graph
 {
