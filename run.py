@@ -3,6 +3,7 @@ import auto_graph
 timer = auto_graph.ScopeTimer('run.py')
 
 g = auto_graph.Graph()
+g.add_node('asdf')
 
 auto_graph.print(g)
 

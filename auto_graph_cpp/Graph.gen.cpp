@@ -15,6 +15,7 @@ namespace Pragmatic::auto_graph
 
 	static PyMethodDef PyGraph_methods[] =
 	{
+		{ "add_node", (PyCFunction)PyGraph::Method<&Graph::AddNode>, METH_VARARGS, "Adds a node to the graph" },
 		{ nullptr } // sentinel
 	};
 

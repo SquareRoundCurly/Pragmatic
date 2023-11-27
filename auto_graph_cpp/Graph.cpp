@@ -2,6 +2,7 @@
 #include "Graph.hpp"
 #include "Out.hpp"
 #include "Instrumentation.hpp"
+#include "PyRuntime/PythonUtils.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -34,5 +35,20 @@ namespace Pragmatic::auto_graph
 
 		Out() << "[auto_graph] Graph deinit" << std::endl;
 	}
-}
 
+	PyObject* Graph::AddNode(PyObject* self, PyObject* args)
+	{
+		PROFILE_FUNCTION();
+
+		const char* name_cstr;
+		if (!PyArg_ParseTuple(args, "s", &name_cstr))
+		{
+			ThrowPythonError("Expected a str name");
+		}
+		auto name = std::string(name_cstr);
+
+		Out() << "[auto_graph] Added node: " << name << std::endl;
+
+		Py_RETURN_NONE;
+	}
+}
