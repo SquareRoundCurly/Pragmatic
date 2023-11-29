@@ -5,13 +5,12 @@
 
 namespace Pragmatic::auto_graph
 {
-	struct Edge 
+	struct Edge
 	{
-		int data;
-		Node* source;
-		Node* destination;
+		Node* from;
+		Node* to;
+		// Other data fields specific to the edge
 
-		// Constructor
-		Edge(Node* src, Node* dest) : source(src), destination(dest) { }
+		Edge(Node* src, Node* dest) : from(src), to(dest) { }
 	};
 } // namespace Pragmatic::auto_graph

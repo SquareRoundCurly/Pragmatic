@@ -16,6 +16,8 @@ namespace Pragmatic::auto_graph
 	static PyMethodDef PyGraph_methods[] =
 	{
 		{ "add_node", (PyCFunction)PyGraph::Method<&Graph::AddNode>, METH_VARARGS, "Adds a node to the graph" },
+		{ "add_edge", (PyCFunction)PyGraph::Method<&Graph::AddEdge>, METH_VARARGS, "Adds an edge to the graph" },
+		{ "topological_generations", (PyCFunction)PyGraph::Method<&Graph::TopologicalSort>, METH_VARARGS, "Topologically sorts the graph" },
 		{ nullptr } // sentinel
 	};
 

@@ -8,9 +8,9 @@ namespace Pragmatic::auto_graph
 	struct Node
 	{
 		std::string name;
-		int data;
+		int generation = 0;
+		// Other data fields specific to the node
 
-		// Constructor
 		Node(const std::string& n) : name(n) { }
 	};
 } // namespace Pragmatic::auto_graph
