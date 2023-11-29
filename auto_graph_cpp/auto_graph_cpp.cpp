@@ -13,6 +13,8 @@
 #include "PyRuntime/PyRef.hpp"
 #include "Instrumentation.hpp"
 
+#include "ThreadPool.hpp"
+
 namespace Pragmatic::auto_graph
 {
 	auto_graph_cpp::auto_graph_cpp()
@@ -24,6 +26,15 @@ namespace Pragmatic::auto_graph
 		interpreters.push_back(MainInterpreter::Get());
 		interpreters.push_back(new SubInterpreter());
 		interpreters.push_back(new ProcessInterpreter());
+
+		ThreadPool pool;
+
+		auto result = pool.Enqueue([](int answer) { return answer; }, 42);
+		auto result2 = pool.Enqueue([]() { return true; });
+
+		// get result from future
+		std::cout << result.get() << std::endl;
+		std::cout << result2.get() << std::endl;
 	}
 
 	auto_graph_cpp::~auto_graph_cpp()
