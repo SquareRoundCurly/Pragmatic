@@ -1,12 +1,26 @@
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).parent.absolute()))
-
 import auto_graph
 
-file = 'tests/4_simple_cpp_build/src/Main.cpp'
-json_file = 'temp.json'
-is_valid = auto_graph.hash_utils.verify_file_hash(file, json_file)
-print(f'Is same: {is_valid}')
-if not is_valid:
-	auto_graph.hash_utils.store_hash_in_json(file, json_file)
+timer = auto_graph.ScopeTimer('run.py')
+
+g = auto_graph.Graph()
+g.add_node('a')
+g.add_node('b')
+g.add_node('c')
+g.add_node('d')
+g.add_node('e')
+g.add_edge('a', 'b')
+g.add_edge('a', 'c')
+g.add_edge('b', 'd')
+g.add_edge('b', 'e')
+g.topological_generations()
+
+auto_graph.print(g)
+
+def test_func(a, b):
+	return a + b
+t = auto_graph.Task(test_func, 1)
+result = t.exec(2, 3, 4)
+auto_graph.print(result)
+
+del timer
+pass

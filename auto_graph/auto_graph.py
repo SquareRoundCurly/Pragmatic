@@ -1,24 +1,58 @@
-from . import auto_graph_cpp
+# Imports
+import ctypes
 
+try:
+    from .__private import auto_graph_cpp
+except ImportError as e:
+    print(e)
+    ctypes.windll.kernel32.SetLastError(0)
+    ctypes.windll.kernel32.GetLastError()
+    print(ctypes.WinError())
+import importlib
+
+# At exit callback
 import atexit
 atexit.register(auto_graph_cpp.cleanup)
 
-def initialize():
-	_ = auto_graph_cpp.ScopeTimer('initialize')
-	auto_graph_cpp.initialize()
+# auto_graph methods
 
-def task(code: str):
-	_ = auto_graph_cpp.ScopeTimer('task')
-	auto_graph_cpp.task(code)
-
-def cleanup():
-	_ = auto_graph_cpp.ScopeTimer('cleanup')
+def cleanup() -> None:
 	auto_graph_cpp.cleanup()
 
-def print(msg: str):
+def print(msg: str) -> None:
 	auto_graph_cpp.print(msg)
 
-def run_command(cmd: str):
-	_ = auto_graph_cpp.ScopeTimer('run_command')
-	output = auto_graph_cpp.run_command(cmd)
-	return output
+def task(code: str) -> None:
+	auto_graph_cpp.task(code)
+
+def exec() -> None:
+	auto_graph_cpp.exec()
+
+# Handle module reload
+__original_reload = importlib.reload
+def __auto_graph_reload(module):
+	is_auto_graph = module.__name__ == 'auto_graph'
+
+	# Check if the module being reloaded is 'auto_graph'
+	if is_auto_graph:
+		# Pre-reload cleanup code
+		auto_graph_cpp.print('[auto_graph] pre-reload')
+		auto_graph_cpp.cleanup()
+		atexit.unregister(auto_graph_cpp.cleanup)
+
+		# Explicitly reload the auto_graph_cpp module
+		__original_reload(auto_graph_cpp)
+		
+	# Call the original reload function
+	__original_reload(module)
+	
+	# Post-reload code
+	if is_auto_graph:
+		auto_graph_cpp.print('[auto_graph] post-reload')
+		# Re-register with atexit
+		atexit.register(auto_graph_cpp.cleanup)
+		auto_graph_cpp.reinit()
+		
+	return module
+# Override the original reload
+importlib.reload = __auto_graph_reload

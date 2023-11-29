@@ -5,7 +5,7 @@
 			"label": "build extension RELEASE",
 			"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe",
 			"args": [
-				"auto_graph/setup.py",
+				"setup.py",
 				"build_ext"
 			]
 		},
@@ -14,7 +14,7 @@
 			"windows": {
 				"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe",
 				"args": [
-					"auto_graph/setup.py",
+					"setup.py",
 					"build_ext",
 					"--debug"
 				]
@@ -32,10 +32,27 @@
 			"label": "install extension DEBUG",
 			"command": "${workspaceFolder}/external/cpython/PCBuild/amd64/python.exe",
 			"args": [
-				"auto_graph/setup.py",
+				"setup.py",
 				"build_ext",
 				"--debug",
 				"install"
+			]
+		},
+		{
+			"label": "package auto_graph RELEASE 3.12",
+			"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe",
+			"args": [
+				"setup.py",
+				"sdist",
+				"bdist_wheel"
+			]
+		},
+		{
+			"label": "package auto_graph RELEASE 3.11",
+			"command": "python",
+			"args": [
+				"setup.py",
+				"bdist_wheel"
 			]
 		},
 		{
@@ -68,7 +85,7 @@
 			"label": "Install pip & setuptools",
 			"windows": {
 				"type": "shell",
-				"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe -m ensurepip --upgrade && ${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe -m pip install setuptools --upgrade",
+				"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe -m ensurepip --upgrade && ${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe -m pip install setuptools --upgrade && ${workspaceFolder}/external/cpython/PCbuild/amd64/python_d.exe -m pip install wheel --upgrade",
 				"problemMatcher": [],
 				"options": {
 					"shell": {
@@ -87,6 +104,19 @@
 			"presentation": {
 				"reveal": "always"
 			}
+		},
+		{
+			"label": "create virtual environment",
+			"command": "${workspaceFolder}/external/cpython/PCbuild/amd64/python.exe",
+			"args": [
+				"-m",
+				"venv",
+				"testenv"
+			]
+		},
+		{
+			"label": "activate testenv",
+			"command": "${workspaceFolder}/testenv/Scripts/activate"
 		}
 	],
 	"presentation": {

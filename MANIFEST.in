@@ -1,0 +1,6 @@
+recursive-include auto_graph *py
+recursive-include auto_graph *pyi
+recursive-include auto_graph_cpp *.hpp
+recursive-include auto_graph_cpp *.cpp
+recursive-exclude tests *
+recursive-exclude external *
