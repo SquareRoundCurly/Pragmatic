@@ -2,6 +2,8 @@ import auto_graph
 
 timer = auto_graph.ScopeTimer('run.py')
 
+auto_graph.test()
+
 g = auto_graph.Graph()
 g.add_node('a')
 g.add_node('b')

@@ -28,6 +28,9 @@ def task(code: str) -> None:
 def exec() -> None:
 	auto_graph_cpp.exec()
 
+def test() -> None:
+	auto_graph_cpp.test()
+
 # Handle module reload
 __original_reload = importlib.reload
 def __auto_graph_reload(module):

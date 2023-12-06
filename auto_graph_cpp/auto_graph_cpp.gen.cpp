@@ -224,6 +224,8 @@ namespace Pragmatic::auto_graph
 		{ "print",   method<auto_graph_cpp, &auto_graph_cpp::print>,    METH_VARARGS, "A thread safe print function"                                   },
 		{ "task",    method<auto_graph_cpp, &auto_graph_cpp::add_task>, METH_VARARGS, "Python functions to add to the executor pool"                   },
 		{ "exec",    method<auto_graph_cpp, &auto_graph_cpp::exec>,     METH_VARARGS, "Execute added tasks"                                            },
+
+		{ "test",    method<auto_graph_cpp, &auto_graph_cpp::test>,     METH_VARARGS, "Execute added tasks"                                            },
 		
 		{ "internal_runner", internal_runner, METH_VARARGS, "Internal runner for multiprocess runners" },
 		{ "run_in_subprocess", (PyCFunction)run_in_subprocess, METH_VARARGS | METH_KEYWORDS, "Runs callables in multiprocessing" },

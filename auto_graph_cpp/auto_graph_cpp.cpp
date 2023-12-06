@@ -26,15 +26,6 @@ namespace Pragmatic::auto_graph
 		interpreters.push_back(MainInterpreter::Get());
 		interpreters.push_back(new SubInterpreter());
 		interpreters.push_back(new ProcessInterpreter());
-
-		ThreadPool pool;
-
-		auto result = pool.Enqueue([](int answer) { return answer; }, 42);
-		auto result2 = pool.Enqueue([]() { return true; });
-
-		// get result from future
-		std::cout << result.get() << std::endl;
-		std::cout << result2.get() << std::endl;
 	}
 
 	auto_graph_cpp::~auto_graph_cpp()
@@ -129,7 +120,60 @@ namespace Pragmatic::auto_graph
 		Py_RETURN_NONE;
 	}
 
-	int auto_graph_cpp::init(PyObject *module)
+	PyObject *auto_graph_cpp::test(PyObject *self, PyObject *args)
+	{
+		ThreadPool pool;
+
+		auto result = pool.Enqueue([](int answer) { return answer; }, 42);
+		auto result2 = pool.Enqueue([]() { return true; });
+
+		Out() << result.get() << std::endl;
+		Out() << result2.get() << std::endl;
+
+		auto* mainThreadState = PyThreadState_Get();
+		PyThreadState* subinterpreterThreadState = nullptr;
+
+		// Create a new sub-interpreter
+		const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
+		Py_NewInterpreterFromConfig(&subinterpreterThreadState, &config);
+
+		auto* mainThreadStateSaved = PyEval_SaveThread();
+		auto thread = std::thread([&]()
+		{
+			// Per thread init
+			auto newState = PyThreadState_New(subinterpreterThreadState->interp);
+			PyEval_RestoreThread(newState);
+
+			// Exec begin
+			auto* oldState = PyThreadState_Swap(newState);
+			
+			// Exec
+			PyRun_SimpleString("print('hello from worker')");
+
+			// Exec end
+			PyThreadState_Swap(oldState);
+
+			// Exiting thread
+			PyThreadState_Clear(newState);
+			PyThreadState_DeleteCurrent();
+
+		});
+
+		thread.join();
+		PyEval_RestoreThread(mainThreadStateSaved);
+
+		// After thread joined
+		PyThreadState_Swap(mainThreadState);
+
+		// End of program
+		PyThreadState_Swap(subinterpreterThreadState);
+		Py_EndInterpreter(subinterpreterThreadState);
+		PyThreadState_Swap(mainThreadState);
+
+		Py_RETURN_NONE;
+	}
+
+    int auto_graph_cpp::init(PyObject *module)
 	{
 		PROFILE_FUNCTION();
 
