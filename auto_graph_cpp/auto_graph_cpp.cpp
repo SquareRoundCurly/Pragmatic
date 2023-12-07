@@ -14,6 +14,9 @@
 #include "Instrumentation.hpp"
 
 #include "ThreadPool.hpp"
+#include "readerwriterqueue.h"
+using namespace moodycamel;
+#include <string>
 
 namespace Pragmatic::auto_graph
 {
@@ -122,53 +125,73 @@ namespace Pragmatic::auto_graph
 
 	PyObject *auto_graph_cpp::test(PyObject *self, PyObject *args)
 	{
-		ThreadPool pool;
+		auto mainThreadState = PyThreadState_Get();
 
-		auto result = pool.Enqueue([](int answer) { return answer; }, 42);
-		auto result2 = pool.Enqueue([]() { return true; });
-
-		Out() << result.get() << std::endl;
-		Out() << result2.get() << std::endl;
-
-		auto* mainThreadState = PyThreadState_Get();
 		PyThreadState* subinterpreterThreadState = nullptr;
-
-		// Create a new sub-interpreter
 		const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
 		Py_NewInterpreterFromConfig(&subinterpreterThreadState, &config);
 
-		auto* mainThreadStateSaved = PyEval_SaveThread();
+		BlockingReaderWriterQueue<std::string> queue;
+
 		auto thread = std::thread([&]()
 		{
-			// Per thread init
 			auto newState = PyThreadState_New(subinterpreterThreadState->interp);
 			PyEval_RestoreThread(newState);
 
-			// Exec begin
-			auto* oldState = PyThreadState_Swap(newState);
-			
-			// Exec
-			PyRun_SimpleString("print('hello from worker')");
+			while (true)
+			{
+				std::string pythonTask;
+				queue.wait_dequeue(pythonTask);
+				PyObject* result = nullptr;
 
-			// Exec end
-			PyThreadState_Swap(oldState);
+                if (pythonTask == "")
+                    break;
+                else
+				{
+					PROFILE_SCOPE("PyRun_String");
 
-			// Exiting thread
+					auto& code = pythonTask;
+
+					auto* oldState = PyThreadState_Swap(newState);
+
+					PyObject* main_module = PyImport_AddModule("__main__");
+					PyObject* global_dict = PyModule_GetDict(main_module);
+
+					if (true)
+						result = PyRun_String(code.c_str(), Py_eval_input, global_dict, global_dict);
+					else
+						result = PyRun_String(code.c_str(), Py_file_input, global_dict, global_dict);
+
+					PyThreadState_Swap(oldState);
+				}
+			}
+		
 			PyThreadState_Clear(newState);
 			PyThreadState_DeleteCurrent();
-
+			
+			Out() << "Exiting thread: " << std::this_thread::get_id() << std::endl;
 		});
 
-		thread.join();
-		PyEval_RestoreThread(mainThreadStateSaved);
-
-		// After thread joined
 		PyThreadState_Swap(mainThreadState);
 
-		// End of program
-		PyThreadState_Swap(subinterpreterThreadState);
-		Py_EndInterpreter(subinterpreterThreadState);
-		PyThreadState_Swap(mainThreadState);
+		// Add task
+		queue.enqueue("print('Hello')");
+
+		// Destruct
+		{
+			PROFILE_SCOPE("Waiting for tasks to finish");
+			queue.enqueue("");
+
+			if (thread.joinable())
+				thread.join();
+		}
+
+		{
+			PROFILE_SCOPE("Finalizing subinterpreter");
+			PyThreadState_Swap(subinterpreterThreadState);
+			Py_EndInterpreter(subinterpreterThreadState);
+			PyThreadState_Swap(mainThreadState);
+		}
 
 		Py_RETURN_NONE;
 	}
