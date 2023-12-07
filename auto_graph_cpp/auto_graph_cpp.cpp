@@ -125,6 +125,14 @@ namespace Pragmatic::auto_graph
 
 	PyObject *auto_graph_cpp::test(PyObject *self, PyObject *args)
 	{
+		ThreadPool pool;
+
+		auto res1 = pool.Enqueue([](){ return 5; });
+		auto res2 = pool.Enqueue([](int b){ return 5 * b; }, 10);
+
+		Out() << "res1 " << res1.get() << std::endl;
+		Out() << "res2 " << res2.get() << std::endl;
+
 		auto mainThreadState = PyThreadState_Get();
 
 		PyThreadState* subinterpreterThreadState = nullptr;
