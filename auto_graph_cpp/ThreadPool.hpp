@@ -45,6 +45,8 @@ namespace Pragmatic::auto_graph
 		public: // ThreadPool
 		template<class F, class... Args>
 		auto Enqueue(F&& f, Args&&... args) -> std::future<decltype(std::invoke(std::forward<F>(f), std::forward<Args>(args)...))>;
+		template<class F, class... Args>
+		auto EnqueueToAll(F&& f, Args&&... args) -> std::vector<std::future<decltype(std::invoke(std::forward<F>(f), std::forward<Args>(args)...))>>;
 
 		private: // State
 		moodycamel::BlockingConcurrentQueue<std::function<void()>> queue;
@@ -76,5 +78,26 @@ namespace Pragmatic::auto_graph
 
 		selectedWorker->EnqueueTask([task]() { (*task)(); });
 		return res;
+	}
+
+	template <class F, class... Args>
+	inline auto ThreadPool::EnqueueToAll(F&& f, Args&&... args) -> std::vector<std::future<decltype(std::invoke(std::forward<F>(f), std::forward<Args>(args)...))>>
+	{
+		PROFILE_FUNCTION();
+
+		using return_type = decltype(std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
+		std::vector<std::future<return_type>> results;
+
+		for (const auto& worker : workers)
+		{
+			auto task = std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+			std::future<return_type> res = task->get_future();
+
+			worker->EnqueueTask([task]() { (*task)(); });
+			
+			results.push_back(std::move(res));
+		}
+
+		return results;
 	}
 } // namespace Pragmatic::auto_graph

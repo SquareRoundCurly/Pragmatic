@@ -133,6 +133,14 @@ namespace Pragmatic::auto_graph
 		Out() << "res1 " << res1.get() << std::endl;
 		Out() << "res2 " << res2.get() << std::endl;
 
+
+		auto results = pool.EnqueueToAll([]() { Out() << "Running on thread: " << std::this_thread::get_id() << std::endl; });
+
+		for (auto& result : results)
+		{
+			result.get();
+		}
+
 		auto mainThreadState = PyThreadState_Get();
 
 		PyThreadState* subinterpreterThreadState = nullptr;
