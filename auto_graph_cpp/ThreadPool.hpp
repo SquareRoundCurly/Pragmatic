@@ -7,19 +7,35 @@
 #include <condition_variable>
 #include <functional>
 
-// TODO: remove this
-#include <queue>
-#include <mutex>
-
 // auto_graph
 #include "Instrumentation.hpp"
 
 // External
 #include "blockingconcurrentqueue.h"
+using namespace moodycamel;
 
 
 namespace Pragmatic::auto_graph
 {
+	template<class F, class... Args>
+	using TaskReturnType = std::invoke_result_t<F, Args...>;
+	template<class F, class... Args>
+	using TaskFuture = std::future<TaskReturnType<F, Args...>>;
+	template<class F, class... Args>
+	using PackagedTask = std::packaged_task<TaskReturnType<F, Args...>()>;
+
+	template <class F, class... Args>
+	inline auto CreateTaskAndFuture(F&& f, Args&&... args)
+	{
+		auto task = std::make_shared<PackagedTask<F, Args...>>
+		(
+			std::bind(std::forward<F>(f), std::forward<Args>(args)...)
+		);
+		auto res = task->get_future();
+
+		return std::make_pair(std::move(task), std::move(res));
+	}
+
 	class Worker
 	{
 		public:
@@ -33,7 +49,7 @@ namespace Pragmatic::auto_graph
 
 		private:
 		std::thread thread;
-		moodycamel::BlockingConcurrentQueue<std::function<void()>> queue;
+		BlockingConcurrentQueue<std::function<void()>> queue;
 	};
 
 	class ThreadPool
@@ -42,59 +58,50 @@ namespace Pragmatic::auto_graph
 		ThreadPool(size_t size = std::thread::hardware_concurrency());
 		~ThreadPool();
 
+		public: // Get
+		inline const size_t Size() const { return workers.size(); } 
+
 		public: // ThreadPool
 		template<class F, class... Args>
-		auto Enqueue(F&& f, Args&&... args) -> std::future<decltype(std::invoke(std::forward<F>(f), std::forward<Args>(args)...))>;
+		auto Enqueue(F&& f, Args&&... args) -> TaskFuture<F, Args...>;
 		template<class F, class... Args>
-		auto EnqueueToAll(F&& f, Args&&... args) -> std::vector<std::future<decltype(std::invoke(std::forward<F>(f), std::forward<Args>(args)...))>>;
+		auto EnqueueToAll(F&& f, Args&&... args) -> std::vector<TaskFuture<F, Args...>>;
 
 		private: // State
-		moodycamel::BlockingConcurrentQueue<std::function<void()>> queue;
+		BlockingConcurrentQueue<std::function<void()>> queue;
 		std::vector<std::unique_ptr<Worker>> workers;
 	};
 
 	template <class F, class... Args>
-	inline auto ThreadPool::Enqueue(F &&f, Args &&...args) -> std::future<decltype(std::invoke(std::forward<F>(f), std::forward<Args>(args)...))>
+	inline auto ThreadPool::Enqueue(F &&f, Args &&...args) -> TaskFuture<F, Args...>
 	{
 		PROFILE_FUNCTION();
 
-		using return_type = decltype(std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
-		auto task = std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-		std::future<return_type> res = task->get_future();
+		auto [task, res] = CreateTaskAndFuture(std::forward<F>(f), std::forward<Args>(args)...);
 
-		static size_t lastWorkerID = 0;
-		size_t lowestQueueSize = LLONG_MAX;
-		Worker* selectedWorker = nullptr;
-
-		for (const auto& worker : workers)
+		auto selectedWorker = std::min_element(workers.begin(), workers.end(), [](const auto& a, const auto& b)
 		{
-			size_t queueSize = worker->GetApproximateSize();
-			if (queueSize < lowestQueueSize)
-			{
-				lowestQueueSize = queueSize;
-				selectedWorker = worker.get();
-			}
-		}
+			return a->GetApproximateSize() < b->GetApproximateSize();
+		});
 
-		selectedWorker->EnqueueTask([task]() { (*task)(); });
-		return res;
+		(*selectedWorker)->EnqueueTask([task]() { (*task)(); });
+
+		return std::move(res);
 	}
 
 	template <class F, class... Args>
-	inline auto ThreadPool::EnqueueToAll(F&& f, Args&&... args) -> std::vector<std::future<decltype(std::invoke(std::forward<F>(f), std::forward<Args>(args)...))>>
+	inline auto ThreadPool::EnqueueToAll(F&& f, Args&&... args) -> std::vector<TaskFuture<F, Args...>>
 	{
 		PROFILE_FUNCTION();
 
-		using return_type = decltype(std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
-		std::vector<std::future<return_type>> results;
+		std::vector<TaskFuture<F, Args...>> results;
 
 		for (const auto& worker : workers)
 		{
-			auto task = std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-			std::future<return_type> res = task->get_future();
+			auto [task, res] = CreateTaskAndFuture(std::forward<F>(f), std::forward<Args>(args)...);
 
 			worker->EnqueueTask([task]() { (*task)(); });
-			
+
 			results.push_back(std::move(res));
 		}
 
