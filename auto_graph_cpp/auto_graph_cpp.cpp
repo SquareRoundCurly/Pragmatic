@@ -13,10 +13,13 @@
 #include "PyRuntime/PyRef.hpp"
 #include "Instrumentation.hpp"
 
+// TODO: remove this
 #include "ThreadPool.hpp"
 #include "readerwriterqueue.h"
 using namespace moodycamel;
 #include <string>
+#include "PythonTask.hpp"
+#include "Indexer.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -123,6 +126,11 @@ namespace Pragmatic::auto_graph
 		Py_RETURN_NONE;
 	}
 
+	thread_local struct TLS
+	{
+		int i = -1;
+	} tls;
+
 	PyObject *auto_graph_cpp::test(PyObject *self, PyObject *args)
 	{
 		ThreadPool pool;
@@ -141,6 +149,67 @@ namespace Pragmatic::auto_graph
 			result.get();
 		}
 
+		std::vector<std::shared_future<void>> TLSresults;
+		for (size_t i = 0; i < 20; i++)
+		{
+			auto TLSresult = pool.Enqueue([](TLS* tls)
+			{
+				if (tls->i == -1)
+				{
+					Out() << "Setting tls: " << std::this_thread::get_id() << std::endl;
+
+					std::stringstream ss;
+					ss << std::this_thread::get_id();
+					tls->i = std::stoull(ss.str());
+				}
+				else
+				{
+					Out() << "tls ready:   " << std::this_thread::get_id() << std::endl;
+				}
+			}, &tls);
+			
+			TLSresults.push_back(TLSresult.share());
+		}
+
+		for (auto& result : TLSresults)
+		{
+			result.get();
+		}
+		
+
+		std::vector<int> numbers = {1, 2, 3, 4, 5};
+		auto resultsForEach = pool.EnqueueForEach(numbers, [](int num) {
+			return num * 2; // Replace with your actual task logic
+		});
+
+		for (auto [i, result] : Indexer(resultsForEach))
+		{
+			Out() << "Result " << i << " : " << result.get() << std::endl;
+		}
+
+
+		// std::vector<PythonTask> pyTasks;
+		// for (size_t i = 0; i < pool.Size(); i++)
+		// {
+		// 	pyTasks.emplace_back(PythonTask());
+		// }
+
+		// pool.Enqueue([&pyTask]()
+		// {
+		// 	pyTask.InitializeOnThread();
+		// 	pyTask([]()
+		// 	{
+		// 		PyObject* main_module = PyImport_AddModule("__main__");
+		// 		PyObject* global_dict = PyModule_GetDict(main_module);
+		// 		auto result = PyRun_String("print('hello from PythonTask')", Py_eval_input, global_dict, global_dict);
+		// 	});
+		// 	pyTask.DestroyOnThread();
+		// }).get();
+		// pyTask.~PythonTask();
+
+		Py_RETURN_NONE;
+
+		/*
 		auto mainThreadState = PyThreadState_Get();
 
 		PyThreadState* subinterpreterThreadState = nullptr;
@@ -210,6 +279,8 @@ namespace Pragmatic::auto_graph
 		}
 
 		Py_RETURN_NONE;
+
+		*/
 	}
 
     int auto_graph_cpp::init(PyObject *module)

@@ -66,6 +66,8 @@ namespace Pragmatic::auto_graph
 		auto Enqueue(F&& f, Args&&... args) -> TaskFuture<F, Args...>;
 		template<class F, class... Args>
 		auto EnqueueToAll(F&& f, Args&&... args) -> std::vector<TaskFuture<F, Args...>>;
+		template <class Container, class F, class... Args>
+		auto EnqueueForEach(Container&& container, F&& f, Args&&... args) -> std::vector<TaskFuture<F, typename std::decay_t<decltype(*container.begin())>, Args...>>;
 
 		private: // State
 		BlockingConcurrentQueue<std::function<void()>> queue;
@@ -101,6 +103,36 @@ namespace Pragmatic::auto_graph
 			auto [task, res] = CreateTaskAndFuture(std::forward<F>(f), std::forward<Args>(args)...);
 
 			worker->EnqueueTask([task]() { (*task)(); });
+
+			results.push_back(std::move(res));
+		}
+
+		return results;
+	}
+
+	template <class Container, class F, class... Args>
+	inline auto ThreadPool::EnqueueForEach(Container&& container, F&& f, Args&&... args) -> std::vector<TaskFuture<F, typename std::decay_t<decltype(*container.begin())>, Args...>>
+	{
+		PROFILE_FUNCTION();
+
+		using ContainerValueType = typename std::decay_t<decltype(*container.begin())>;
+		std::vector<TaskFuture<F, ContainerValueType, Args...>> results;
+		results.reserve(container.size());
+
+		for (const auto& item : container)
+		{
+			auto [task, res] = CreateTaskAndFuture(
+				std::forward<F>(f),
+				item,
+				std::forward<Args>(args)...
+			);
+
+			auto selectedWorker = std::min_element(workers.begin(), workers.end(), [](const auto& a, const auto& b)
+			{
+				return a->GetApproximateSize() < b->GetApproximateSize();
+			});
+
+			(*selectedWorker)->EnqueueTask([task]() { (*task)(); });
 
 			results.push_back(std::move(res));
 		}

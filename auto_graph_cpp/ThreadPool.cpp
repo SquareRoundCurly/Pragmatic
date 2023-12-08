@@ -35,7 +35,7 @@ namespace Pragmatic::auto_graph
 		queue.enqueue(task);
 	}
 
-	ThreadPool::ThreadPool(size_t size) : queue(), workers()
+	ThreadPool::ThreadPool(size_t size) : workers()
 	{
 		PROFILE_FUNCTION();
 
