@@ -14,6 +14,9 @@
 #include "blockingconcurrentqueue.h"
 using namespace moodycamel;
 
+#ifdef __INTELLISENSE__
+	#pragma diag_suppress 304 // EnqueueForEach confuses Intellisense
+#endif
 
 namespace Pragmatic::auto_graph
 {

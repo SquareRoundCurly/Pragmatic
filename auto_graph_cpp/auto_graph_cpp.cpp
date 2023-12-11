@@ -18,7 +18,6 @@
 #include "readerwriterqueue.h"
 using namespace moodycamel;
 #include <string>
-#include "PythonTask.hpp"
 #include "Indexer.hpp"
 
 namespace Pragmatic::auto_graph
@@ -176,7 +175,6 @@ namespace Pragmatic::auto_graph
 			result.get();
 		}
 		
-
 		std::vector<int> numbers = {1, 2, 3, 4, 5};
 		auto resultsForEach = pool.EnqueueForEach(numbers, [](int num) {
 			return num * 2; // Replace with your actual task logic
