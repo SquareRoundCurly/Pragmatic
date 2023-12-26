@@ -14,7 +14,13 @@ g.add_edge('a', 'b')
 g.add_edge('a', 'c')
 g.add_edge('b', 'd')
 g.add_edge('b', 'e')
-g.topological_generations()
+gens = g.topological_generations()
+
+for	gen in gens:
+	line_str = ''
+	for node in gen:
+		line_str += node + ' '
+	print(line_str)
 
 auto_graph.print(g)
 

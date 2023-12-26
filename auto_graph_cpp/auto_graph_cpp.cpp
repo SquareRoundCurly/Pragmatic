@@ -282,10 +282,13 @@ namespace Pragmatic::auto_graph
 			result.get();
 
 		// Run code
-		auto subinterpreterRuntime = pool.EnqueueForAll(subinterpreters, [](PySubinterpreterObject* subinterpreter) {
-			PyRun("import threading\nprint(f'Hello: {threading.get_ident()}')")();
-		});
-		for (auto& result : subinterpreterRuntime)
+		std::vector<std::shared_future<void>> pyResults;
+		for (size_t i = 0; i < 100; i++)
+		{
+			auto pyFuture = pool.Enqueue(PyRun("import threading\nprint(f'" + std::to_string(i) + " : {threading.get_ident()}')"));
+			pyResults.emplace_back(pyFuture.share());
+		}
+		for (auto& result : pyResults)
 			result.get();
 
 		// Destory on thread

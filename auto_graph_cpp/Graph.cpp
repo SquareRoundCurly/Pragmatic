@@ -162,18 +162,27 @@ namespace Pragmatic::auto_graph
 	PyObject *Graph::TopologicalSort(PyObject *self, PyObject *args)
 	{
 		auto generations = TopologicalSort();
+
+		PyObject* result_list = PyList_New(0);
 		int counter = 0;
 
 		for (auto& generation : generations)
 		{
-			Out() << counter++ << ": ";
+			PyObject* generation_list = PyList_New(0);
+
 			for (auto& node : generation)
 			{
-				Out() << node->name << " ";
+				PyObject* node_name = PyUnicode_DecodeUTF8(node->name.c_str(), node->name.size(), "strict");
+				PyList_Append(generation_list, node_name);
+				Py_DECREF(node_name);
 			}
-			Out() << std::endl;
+
+			PyList_Append(result_list, generation_list);
+			Py_DECREF(generation_list);
+
+			counter++;
 		}
-	
-		Py_RETURN_NONE;
+
+		return result_list;
 	}
 }
