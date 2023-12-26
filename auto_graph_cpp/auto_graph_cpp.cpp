@@ -19,6 +19,8 @@
 using namespace moodycamel;
 #include <string>
 #include "Indexer.hpp"
+#include <chrono>
+using namespace std::chrono_literals;
 
 namespace Pragmatic::auto_graph
 {
@@ -130,6 +132,79 @@ namespace Pragmatic::auto_graph
 		int i = -1;
 	} tls;
 
+	thread_local struct PySubinterpreterTLS
+	{
+		PyThreadState* threadState = nullptr;
+	} pySubinterpreterTLS;
+
+	struct PySubinterpreterObject
+	{
+		PyThreadState* mainThreadState = nullptr;
+		PyThreadState* subinterpreterThreadState = nullptr;
+
+		BlockingReaderWriterQueue<std::function<void()>> queue;
+		std::thread thread;
+	};
+
+	void CreatePySubinterpreter(PySubinterpreterObject* pySubinterpreter)
+	{
+		pySubinterpreter->mainThreadState = PyThreadState_Get();
+
+		const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
+		Py_NewInterpreterFromConfig(&pySubinterpreter->subinterpreterThreadState, &config);
+
+		PyThreadState_Swap(pySubinterpreter->mainThreadState);
+	}
+
+	void DestructPySubinterpreter(PySubinterpreterObject* pySubinterpreter)
+	{
+		{
+			PROFILE_SCOPE("Waiting for tasks to finish");
+			
+			pySubinterpreter->queue.enqueue(nullptr);
+
+			if (pySubinterpreter->thread.joinable())
+				pySubinterpreter->thread.join();
+		}
+
+		{
+			PROFILE_SCOPE("Destorying subinterpreter");
+
+			PyThreadState_Swap(pySubinterpreter->subinterpreterThreadState);
+			Py_EndInterpreter(pySubinterpreter->subinterpreterThreadState);
+			PyThreadState_Swap(pySubinterpreter->mainThreadState);
+		}
+	}
+
+	void InitOnThread(PySubinterpreterObject* pySubinterpreter)
+	{
+		Out() << "Initializing subinterpreter on thread: " << std::this_thread::get_id() << std::endl;
+		pySubinterpreterTLS.threadState = PyThreadState_New(pySubinterpreter->subinterpreterThreadState->interp);
+		PyEval_RestoreThread(pySubinterpreterTLS.threadState);
+	}
+
+	void DestroyOnThread()
+	{
+		Out() << "destroying subinterpreter on thread: " << std::this_thread::get_id() << std::endl;
+		PyThreadState_Clear(pySubinterpreterTLS.threadState);
+		PyThreadState_DeleteCurrent();
+	}
+
+	std::function<void()> PyRun(const std::string& code)
+	{
+		return [=]()
+		{
+			auto* oldState = PyThreadState_Swap(pySubinterpreterTLS.threadState);
+			
+			PyObject* main_module = PyImport_AddModule("__main__");
+			PyObject* global_dict = PyModule_GetDict(main_module);
+
+			PyRun_String(code.c_str(), Py_file_input, global_dict, global_dict);
+			
+			PyThreadState_Swap(oldState);
+		};
+	}
+
 	PyObject *auto_graph_cpp::test(PyObject *self, PyObject *args)
 	{
 		ThreadPool pool;
@@ -186,99 +261,78 @@ namespace Pragmatic::auto_graph
 		}
 
 
-		// std::vector<PythonTask> pyTasks;
-		// for (size_t i = 0; i < pool.Size(); i++)
-		// {
-		// 	pyTasks.emplace_back(PythonTask());
-		// }
 
-		// pool.Enqueue([&pyTask]()
-		// {
-		// 	pyTask.InitializeOnThread();
-		// 	pyTask([]()
-		// 	{
-		// 		PyObject* main_module = PyImport_AddModule("__main__");
-		// 		PyObject* global_dict = PyModule_GetDict(main_module);
-		// 		auto result = PyRun_String("print('hello from PythonTask')", Py_eval_input, global_dict, global_dict);
-		// 	});
-		// 	pyTask.DestroyOnThread();
-		// }).get();
-		// pyTask.~PythonTask();
 
-		Py_RETURN_NONE;
 
-		/*
-		auto mainThreadState = PyThreadState_Get();
-
-		PyThreadState* subinterpreterThreadState = nullptr;
-		const PyInterpreterConfig config = _PyInterpreterConfig_INIT;
-		Py_NewInterpreterFromConfig(&subinterpreterThreadState, &config);
-
-		BlockingReaderWriterQueue<std::string> queue;
-
-		auto thread = std::thread([&]()
+		// Prepare subinterpreters
+		auto size = pool.Size();
+		std::vector<PySubinterpreterObject*> subinterpreters;
+		for (size_t i = 0; i < size; i++)
 		{
-			auto newState = PyThreadState_New(subinterpreterThreadState->interp);
-			PyEval_RestoreThread(newState);
+			auto* subinterpreter = new PySubinterpreterObject;
+			subinterpreters.push_back(subinterpreter);
+			CreatePySubinterpreter(subinterpreter);
+		}
 
+		// Init
+		auto subinterpreterInits = pool.EnqueueForAll(subinterpreters, [](PySubinterpreterObject* subinterpreter) {
+			InitOnThread(subinterpreter);
+		});
+		for (auto& result : subinterpreterInits)
+			result.get();
+
+		// Run code
+		auto subinterpreterRuntime = pool.EnqueueForAll(subinterpreters, [](PySubinterpreterObject* subinterpreter) {
+			PyRun("import threading\nprint(f'Hello: {threading.get_ident()}')")();
+		});
+		for (auto& result : subinterpreterRuntime)
+			result.get();
+
+		// Destory on thread
+		auto subinterpreterDestroy = pool.EnqueueForAll(subinterpreters, [](PySubinterpreterObject* subinterpreter) {
+			DestroyOnThread();
+		});
+		for (auto& result : subinterpreterDestroy)
+			result.get();
+
+		// Cleanup subinterpreters
+		for (auto& subinterpreter : subinterpreters)
+		{
+			DestructPySubinterpreter(subinterpreter);
+			delete subinterpreter;
+		}
+		subinterpreters.clear();
+
+
+
+
+		PySubinterpreterObject pySubinterpreterObject;
+		CreatePySubinterpreter(&pySubinterpreterObject);
+
+		pySubinterpreterObject.thread = std::thread([&]()
+		{
 			while (true)
 			{
-				std::string pythonTask;
-				queue.wait_dequeue(pythonTask);
+				std::function<void()> pythonTask;
+				pySubinterpreterObject.queue.wait_dequeue(pythonTask);
 				PyObject* result = nullptr;
 
-                if (pythonTask == "")
-                    break;
+                if (pythonTask == nullptr)
+					break;
                 else
-				{
-					PROFILE_SCOPE("PyRun_String");
-
-					auto& code = pythonTask;
-
-					auto* oldState = PyThreadState_Swap(newState);
-
-					PyObject* main_module = PyImport_AddModule("__main__");
-					PyObject* global_dict = PyModule_GetDict(main_module);
-
-					if (true)
-						result = PyRun_String(code.c_str(), Py_eval_input, global_dict, global_dict);
-					else
-						result = PyRun_String(code.c_str(), Py_file_input, global_dict, global_dict);
-
-					PyThreadState_Swap(oldState);
-				}
+					pythonTask();
 			}
-		
-			PyThreadState_Clear(newState);
-			PyThreadState_DeleteCurrent();
 			
 			Out() << "Exiting thread: " << std::this_thread::get_id() << std::endl;
 		});
 
-		PyThreadState_Swap(mainThreadState);
+		pySubinterpreterObject.queue.enqueue([&pySubinterpreterObject]() { InitOnThread(&pySubinterpreterObject); });
+		pySubinterpreterObject.queue.enqueue(PyRun("import threading\nprint(f'Hello: {threading.get_ident()}')"));
+		pySubinterpreterObject.queue.enqueue(DestroyOnThread);
 
-		// Add task
-		queue.enqueue("print('Hello')");
-
-		// Destruct
-		{
-			PROFILE_SCOPE("Waiting for tasks to finish");
-			queue.enqueue("");
-
-			if (thread.joinable())
-				thread.join();
-		}
-
-		{
-			PROFILE_SCOPE("Finalizing subinterpreter");
-			PyThreadState_Swap(subinterpreterThreadState);
-			Py_EndInterpreter(subinterpreterThreadState);
-			PyThreadState_Swap(mainThreadState);
-		}
+		DestructPySubinterpreter(&pySubinterpreterObject);
 
 		Py_RETURN_NONE;
-
-		*/
 	}
 
     int auto_graph_cpp::init(PyObject *module)

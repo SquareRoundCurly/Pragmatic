@@ -9,6 +9,7 @@
 
 // auto_graph
 #include "Instrumentation.hpp"
+#include "Indexer.hpp"
 
 // External
 #include "blockingconcurrentqueue.h"
@@ -71,6 +72,8 @@ namespace Pragmatic::auto_graph
 		auto EnqueueToAll(F&& f, Args&&... args) -> std::vector<TaskFuture<F, Args...>>;
 		template <class Container, class F, class... Args>
 		auto EnqueueForEach(Container&& container, F&& f, Args&&... args) -> std::vector<TaskFuture<F, typename std::decay_t<decltype(*container.begin())>, Args...>>;
+		template <class Container, class F, class... Args>
+		auto EnqueueForAll(Container&& container, F&& f, Args&&... args) -> std::vector<TaskFuture<F, typename std::decay_t<decltype(*container.begin())>, Args...>>;
 
 		private: // State
 		BlockingConcurrentQueue<std::function<void()>> queue;
@@ -136,6 +139,31 @@ namespace Pragmatic::auto_graph
 			});
 
 			(*selectedWorker)->EnqueueTask([task]() { (*task)(); });
+
+			results.push_back(std::move(res));
+		}
+
+		return results;
+	}
+
+	template <class Container, class F, class... Args>
+	inline auto ThreadPool::EnqueueForAll(Container&& container, F&& f, Args&&... args) -> std::vector<TaskFuture<F, typename std::decay_t<decltype(*container.begin())>, Args...>>
+	{
+		PROFILE_FUNCTION();
+
+		using ContainerValueType = typename std::decay_t<decltype(*container.begin())>;
+		std::vector<TaskFuture<F, ContainerValueType, Args...>> results;
+		results.reserve(container.size());
+
+		for (const auto& [i, worker] : Indexer(workers))
+		{
+			auto [task, res] = CreateTaskAndFuture(
+				std::forward<F>(f),
+				container[i],
+				std::forward<Args>(args)...
+			);
+
+			worker->EnqueueTask([task]() { (*task)(); });
 
 			results.push_back(std::move(res));
 		}
