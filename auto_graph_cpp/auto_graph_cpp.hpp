@@ -1,7 +1,8 @@
 #pragma once
 
 // Standard library
-#include <vector> 
+#include <vector>
+#include <array>
 
 // External
 #include <pytypedefs.h>
@@ -34,7 +35,7 @@ namespace Pragmatic::auto_graph
 		virtual void free(void* module) override;
 
 		public:
-		std::vector<Interpreter*> interpreters;
+		std::array<Interpreter*, 3> interpreters;
 		private:
 		std::vector<PyObject*> tasks;
 	};

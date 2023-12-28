@@ -30,18 +30,15 @@ namespace Pragmatic::auto_graph
 
 		Out() << "[auto_graph] " << "Main module constructor" << std::endl;
 
-		interpreters.push_back(MainInterpreter::Get());
-		interpreters.push_back(new SubInterpreter());
-		interpreters.push_back(new ProcessInterpreter());
+		interpreters[0] = MainInterpreter::Get();
+		interpreters[1] = new SubInterpreter();
+		interpreters[2] = new ProcessInterpreter();
 	}
 
 	auto_graph_cpp::~auto_graph_cpp()
 	{
 		Out() << "[auto_graph] " << "Main module destructor" << std::endl;
 
-		delete interpreters[1];
-		delete interpreters[2];
-		interpreters.clear();
 	}
 
 	PyObject* auto_graph_cpp::cleanup(PyObject* self, PyObject* args)
@@ -50,6 +47,11 @@ namespace Pragmatic::auto_graph
 
 		Out() << "[auto_graph] " << "cleanup" << std::endl;
 
+		static_cast<SubInterpreter*>(interpreters[1])->~SubInterpreter();
+		delete interpreters[1];
+		static_cast<ProcessInterpreter*>(interpreters[2])->~ProcessInterpreter();
+		delete interpreters[2];
+		
 		Py_RETURN_NONE;
 	}
 
