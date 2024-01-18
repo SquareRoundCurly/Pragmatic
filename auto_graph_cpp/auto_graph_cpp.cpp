@@ -61,6 +61,10 @@ namespace Pragmatic::auto_graph
 
 		Out() << "[auto_graph] " << "reinit" << std::endl;
 
+		interpreters[0] = MainInterpreter::Get();
+		interpreters[1] = new SubInterpreter();
+		interpreters[2] = new ProcessInterpreter();
+
 		Py_RETURN_NONE;
 	}
 

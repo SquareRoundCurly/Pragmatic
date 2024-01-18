@@ -1,7 +1,7 @@
 [submodule "external/cpython"]
 	path = external/cpython
 	url = https://github.com/python/cpython
-	branch = 3.12
+	branch = v3.12.1
 
 [submodule "external/readerwriterqueue"]
 	path = external/readerwriterqueue

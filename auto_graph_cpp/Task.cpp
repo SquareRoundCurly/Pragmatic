@@ -74,7 +74,7 @@ namespace Pragmatic::auto_graph
 	PyObject* Task::Exec(PyObject* self, PyObject* args, PyObject* kwargs)
 	{
 		PROFILE_FUNCTION();
-		
+
 		PyRef mergedArgs = merge_tuples(this->args, args);
 
 		PyObject_Print(args, stdout, 0);

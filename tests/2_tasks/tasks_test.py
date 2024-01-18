@@ -14,6 +14,7 @@ class TasksTest(unittest.TestCase):
 			return i + j
 		t = auto_graph.Task(test_func, 1000, 2000)
 		result = t.exec()
+		del t
 		self.assertEqual(result, 3000)
 
 	def test_2_mixed_args(self):
@@ -21,6 +22,7 @@ class TasksTest(unittest.TestCase):
 			return i + j
 		t = auto_graph.Task(test_func, 1000)
 		result = t.exec(24)
+		del t
 		self.assertEqual(result, 1024)
 
 	def test_3_late_args(self):
@@ -28,6 +30,7 @@ class TasksTest(unittest.TestCase):
 			return i + j
 		t = auto_graph.Task(test_func)
 		result = t.exec(1, 1000)
+		del t
 		self.assertEqual(result, 1001)
 
 	def test_4_undersupply_args(self):
@@ -36,6 +39,7 @@ class TasksTest(unittest.TestCase):
 		t = auto_graph.Task(test_func, 1, 2)
 		with self.assertRaises(Exception) as context:
 			result = t.exec()
+		del t
 		self.assertIn('Not enough arguments provided', str(context.exception))
 
 	def test_5_oversupply_args(self):
@@ -43,6 +47,7 @@ class TasksTest(unittest.TestCase):
 			return a + b
 		t = auto_graph.Task(test_func, 1)
 		result = t.exec(2, 3, 4)
+		del t
 		self.assertEqual(result, 3)
 
 	def test_6_complex_callable(self):
@@ -50,6 +55,7 @@ class TasksTest(unittest.TestCase):
 			return b * a + ''.join(c)
 		t = auto_graph.Task(complex_func, 3, 'hello')
 		result = t.exec(['world', '!'])
+		del t
 		self.assertEqual(result, 'hellohellohelloworld!')
 
 	def test_7_callable_with_default_args(self):

@@ -105,6 +105,7 @@ namespace
 
 			PyThreadState_Swap(oldState);
 
+			Py_INCREF(result);
 			return result;
 		};
 	}
@@ -138,6 +139,7 @@ namespace Pragmatic::auto_graph
 		auto subinterpreterDestroy = pool.EnqueueForAll(subinterpreters, [](PySubinterpreterObject* subinterpreter) {
 			DestroyOnThread();
 		});
+		
 		for (auto& result : subinterpreterDestroy)
 			result.get();
 

@@ -6,7 +6,11 @@ def reimport_test_func():
 	import sys
 	from pathlib import Path
 	sys.path.append(str(Path(__file__).parent.parent.parent.absolute()))
-	import auto_graph
+
+	try:
+		import auto_graph
+	except:
+		print("couldn't import auto_graph")
 
 	auto_graph.print('1')
 
