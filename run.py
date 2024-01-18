@@ -20,13 +20,15 @@ def reimport_test_func():
 
 timer = auto_graph.ScopeTimer('run.py')
 
+def print_node(node_name):
+	auto_graph.print(f'printing from node: {node_name}')
 
 g = auto_graph.Graph()
-g.add_node('a')
-g.add_node('b')
-g.add_node('c')
-g.add_node('d')
-g.add_node('e')
+g.add_node('a', auto_graph.Task(print_node))
+g.add_node('b', auto_graph.Task(print_node))
+g.add_node('c', auto_graph.Task(print_node))
+g.add_node('d', auto_graph.Task(print_node))
+g.add_node('e', auto_graph.Task(print_node))
 g.add_edge('a', 'b')
 g.add_edge('a', 'c')
 g.add_edge('b', 'd')
@@ -40,6 +42,8 @@ for	gen in gens:
 	print(line_str)
 
 auto_graph.print(g)
+
+g.run_tasks()
 
 def test_func(a, b):
 	return a + b

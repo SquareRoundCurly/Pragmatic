@@ -62,4 +62,21 @@ namespace Pragmatic::auto_graph
 	};
 
 	REGISTER_CLASS(PyType_Pragmatic_auto_graph_Task, Task);
+
+	Task& ConvertPyObjectToTask(PyObject* obj)
+	{
+		// Check if obj is a PyTask instance
+		if (PyType_IsSubtype(Py_TYPE(obj), &PyType_Pragmatic_auto_graph_Task))
+		{
+			// Extract the underlying PyTask instance
+			PyTask* pyTask = reinterpret_cast<PyTask*>(obj);
+
+			return pyTask->pyClass;
+		}
+		else
+		{
+			PyErr_SetString(PyExc_TypeError, "Expected a PyTask instance");
+			throw std::runtime_error("Failed to convert PyObject to Task");
+		}
+	}
 } // namespace Pragmatic::auto_graph

@@ -8,6 +8,7 @@
 #include "Out.hpp"
 #include "Instrumentation.hpp"
 #include "PyRuntime/PythonUtils.hpp"
+#include "Task.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -53,9 +54,9 @@ namespace Pragmatic::auto_graph
         return nullptr;
     }
 
-	Node* Graph::AddNode(const std::string& name)
+	Node* Graph::AddNode(const std::string& name, PyObject* task)
 	{
-        nodes.emplace_back(name);
+        nodes.emplace_back(name, task);
         return &nodes.back();
     }
 
@@ -128,14 +129,17 @@ namespace Pragmatic::auto_graph
 		PROFILE_FUNCTION();
 
 		const char* name_cstr;
-		if (!PyArg_ParseTuple(args, "s", &name_cstr))
+		PyObject* task = nullptr;  // Optional callable object
+
+		if (!PyArg_ParseTuple(args, "s|O", &name_cstr, &task))  // Use "s|O" to make callable optional
 		{
 			ThrowPythonError("Expected a str name");
 		}
+
 		auto name = std::string(name_cstr);
 
 		Out() << "[auto_graph] Added node: " << name << std::endl;
-		AddNode(name);
+		AddNode(name, task);
 
 		Py_RETURN_NONE;
 	}
@@ -184,5 +188,29 @@ namespace Pragmatic::auto_graph
 		}
 
 		return result_list;
+	}
+
+	PyObject* Graph::RunTasks(PyObject* self, PyObject* args)
+	{
+		Out() << "Running tasks" << std::endl;
+
+		auto generations = TopologicalSort();
+		for (auto& generation : generations)
+		{
+			for (auto& node : generation)
+			{
+				if (node->task)
+				{
+					PyObject* node_name = PyUnicode_DecodeUTF8(node->name.c_str(), node->name.size(), "strict");
+
+					PyObject* args_tuple = PyTuple_Pack(1, node_name);
+
+					auto& task = ConvertPyObjectToTask(node->task);
+					task.Exec(NULL, args_tuple, NULL);
+				}
+			}
+		}
+
+		Py_RETURN_NONE;
 	}
 }

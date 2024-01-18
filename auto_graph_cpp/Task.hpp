@@ -24,4 +24,6 @@ namespace Pragmatic::auto_graph
 		PyObject* callable = nullptr;
 		PyObject* args = nullptr;
 	};
+
+	Task& ConvertPyObjectToTask(PyObject* obj);
 } // namespace Pragmatic::auto_graph
