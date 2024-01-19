@@ -3,6 +3,7 @@
 
 // Standard library
 #include <queue>
+#include <set>
 
 // auto_graph
 #include "Out.hpp"
@@ -60,14 +61,14 @@ namespace Pragmatic::auto_graph
         return &nodes.back();
     }
 
-    void Graph::AddEdge(const std::string& fromName, const std::string& toName)
+    void Graph::AddEdge(const std::string& fromName, const std::string& toName, PyObject* task)
 	{
         Node* fromNode = GetNodeByName(fromName);
         Node* toNode = GetNodeByName(toName);
 
         if (fromNode && toNode)
 		{
-            edges.emplace_back(fromNode, toNode);
+            edges.emplace_back(fromNode, toNode, task);
         }
     }
 
@@ -77,21 +78,23 @@ namespace Pragmatic::auto_graph
 		std::queue<Node*> nodesQueue;
 
 		// Initialize nodes with no incoming edges
-		for (Node& node : nodes) {
+		for (Node& node : nodes)
+		{
 			bool hasIncomingEdges = std::any_of(edges.begin(), edges.end(),
 				[&node](const Edge& edge) { return edge.to == &node; });
 
-			if (!hasIncomingEdges) {
+			if (!hasIncomingEdges)
 				nodesQueue.push(&node);
-			}
 		}
 
-		while (!nodesQueue.empty()) {
+		while (!nodesQueue.empty())
+		{
 			int currentGeneration = generations.size();
 			generations.push_back(std::vector<Node*>());
 
 			int currentGenerationSize = nodesQueue.size();
-			for (int i = 0; i < currentGenerationSize; ++i) {
+			for (int i = 0; i < currentGenerationSize; ++i)
+			{
 				Node* currentNode = nodesQueue.front();
 				nodesQueue.pop();
 
@@ -100,21 +103,26 @@ namespace Pragmatic::auto_graph
 
 				// Find all nodes dependent on the current node
 				std::vector<Node*> dependentNodes;
-				for (const Edge& edge : edges) {
-					if (edge.from == currentNode) {
+				for (const Edge& edge : edges)
+				{
+					if (edge.from == currentNode)
+					{
 						Node* toNode = edge.to;
 						dependentNodes.push_back(toNode);
 					}
 				}
 
 				// Check if dependent nodes can be processed
-				for (Node* dependentNode : dependentNodes) {
+				for (Node* dependentNode : dependentNodes)
+				{
 					bool allIncomingProcessed = std::all_of(edges.begin(), edges.end(),
-						[dependentNode](const Edge& inEdge) {
+						[dependentNode](const Edge& inEdge)
+						{
 							return inEdge.to == dependentNode || dependentNode->generation != -1;
 						});
 
-					if (allIncomingProcessed) {
+					if (allIncomingProcessed)
+					{
 						nodesQueue.push(dependentNode);
 					}
 				}
@@ -150,15 +158,18 @@ namespace Pragmatic::auto_graph
 
 		const char* fromNameCStr;
 		const char* toNameCStr;
-		if (!PyArg_ParseTuple(args, "ss", &fromNameCStr, &toNameCStr))
+		PyObject* task = nullptr;
+
+		if (!PyArg_ParseTuple(args, "ss|O", &fromNameCStr, &toNameCStr, &task))
 		{
 			ThrowPythonError("Expected a str name");
 		}
+
 		auto fromName = std::string(fromNameCStr);
 		auto toName = std::string(toNameCStr);
 
 		Out() << "[auto_graph] Added edge: [" << fromNameCStr << ", " << toName << "]"<< std::endl;
-		AddEdge(fromName, toName);
+		AddEdge(fromName, toName, task);
 
 		Py_RETURN_NONE;
 	}
@@ -195,6 +206,9 @@ namespace Pragmatic::auto_graph
 		Out() << "Running tasks" << std::endl;
 
 		auto generations = TopologicalSort();
+
+		std::set<Edge*> processedEdges;
+
 		for (auto& generation : generations)
 		{
 			for (auto& node : generation)
@@ -207,6 +221,25 @@ namespace Pragmatic::auto_graph
 
 					auto& task = ConvertPyObjectToTask(node->task);
 					task.Exec(NULL, args_tuple, NULL);
+				}
+
+				// Process outgoing edges for this node
+				for (Edge& edge : edges)
+				{
+					if (edge.from == node && processedEdges.find(&edge) == processedEdges.end())
+					{
+						// Execute the edge's task
+						if (edge.task)
+						{
+							PyObject* from_node_name = PyUnicode_DecodeUTF8(edge.from->name.c_str(), edge.from->name.size(), "strict");
+							PyObject* to_node_name = PyUnicode_DecodeUTF8(edge.to->name.c_str(), edge.from->name.size(), "strict");
+							PyObject* args_tuple = PyTuple_Pack(2, from_node_name, to_node_name);
+
+							auto& edgeTask = ConvertPyObjectToTask(edge.task);
+							edgeTask.Exec(NULL, args_tuple, NULL);  // You can pass appropriate arguments here
+						}
+						processedEdges.insert(&edge);
+					}
 				}
 			}
 		}

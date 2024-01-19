@@ -24,7 +24,7 @@ namespace Pragmatic::auto_graph
 		private: // Graph
 		Node* GetNodeByName(const std::string& name);
 		Node* AddNode(const std::string& name, PyObject* task = nullptr);
-		void AddEdge(const std::string& fromName, const std::string& toName);
+		void AddEdge(const std::string& fromName, const std::string& toName, PyObject* task);
 		std::vector<std::vector<Node*>> TopologicalSort();
 
 		public:

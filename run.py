@@ -23,16 +23,19 @@ timer = auto_graph.ScopeTimer('run.py')
 def print_node(node_name):
 	auto_graph.print(f'printing from node: {node_name}')
 
+def print_edge(from_node, to_node):
+	auto_graph.print(f'printing from edge: {from_node} -> {to_node}')
+
 g = auto_graph.Graph()
 g.add_node('a', auto_graph.Task(print_node))
 g.add_node('b', auto_graph.Task(print_node))
 g.add_node('c', auto_graph.Task(print_node))
 g.add_node('d', auto_graph.Task(print_node))
 g.add_node('e', auto_graph.Task(print_node))
-g.add_edge('a', 'b')
-g.add_edge('a', 'c')
-g.add_edge('b', 'd')
-g.add_edge('b', 'e')
+g.add_edge('a', 'b', auto_graph.Task(print_edge))
+g.add_edge('a', 'c', auto_graph.Task(print_edge))
+g.add_edge('b', 'd', auto_graph.Task(print_edge))
+g.add_edge('b', 'e', auto_graph.Task(print_edge))
 gens = g.topological_generations()
 
 for	gen in gens:
