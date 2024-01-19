@@ -30,6 +30,13 @@ namespace
 
 	std::vector<PySubinterpreterObject*> subinterpreters;
 
+	uint64_t GetThreadID()
+	{
+		std::stringstream ss;
+		ss << std::this_thread::get_id();
+		return std::stoull(ss.str());
+	}
+
 	void CreatePySubinterpreter(PySubinterpreterObject* pySubinterpreter)
 	{
 		pySubinterpreter->mainThreadState = PyThreadState_Get();
@@ -60,18 +67,20 @@ namespace
 		}
 	}
 
-	void InitOnThread(PySubinterpreterObject* pySubinterpreter)
+	uint64_t InitOnThread(PySubinterpreterObject* pySubinterpreter)
 	{
-		Out() << "Initializing subinterpreter on thread: " << std::this_thread::get_id() << std::endl;
 		pySubinterpreterTLS.threadState = PyThreadState_New(pySubinterpreter->subinterpreterThreadState->interp);
 		PyEval_RestoreThread(pySubinterpreterTLS.threadState);
+
+		return GetThreadID();
 	}
 
-	void DestroyOnThread()
+	uint64_t DestroyOnThread()
 	{
-		Out() << "destroying subinterpreter on thread: " << std::this_thread::get_id() << std::endl;
 		PyThreadState_Clear(pySubinterpreterTLS.threadState);
 		PyThreadState_DeleteCurrent();
+
+		return GetThreadID();
 	}
 
 	std::function<void()> PyRun(const std::string& code)
@@ -126,22 +135,63 @@ namespace Pragmatic::auto_graph
 		}
 
 		// Init
-		auto subinterpreterInits = pool.EnqueueForAll(subinterpreters, [](PySubinterpreterObject* subinterpreter) {
-			InitOnThread(subinterpreter);
+		std::mutex mtx;
+		std::vector<uint64_t> ids;
+		auto subinterpreterInits = pool.EnqueueForAll(subinterpreters, [&mtx, &ids](PySubinterpreterObject* subinterpreter)
+		{
+			auto id = InitOnThread(subinterpreter);
+
+			{
+				std::lock_guard lock(mtx);
+				ids.push_back(id);
+			}
 		});
+
+		// Wait for inits to return from all threads
 		for (auto& result : subinterpreterInits)
 			result.get();
+
+		// Print init message
+		std::stringstream ss;
+		if (!ids.empty())
+		{
+			ss << "Initialized " << size << " subinterpreters:";
+			for (const uint64_t& id : ids)
+				ss << " " << id;
+		}
+		else ss << "No subinterpreters initialized";
+   		Out() << "[auto_graph] " << ss.str() << std::endl;
 	}
 	
 	SubInterpreter::~SubInterpreter()
 	{
 		// Destory on thread
-		auto subinterpreterDestroy = pool.EnqueueForAll(subinterpreters, [](PySubinterpreterObject* subinterpreter) {
-			DestroyOnThread();
+		std::mutex mtx;
+		std::vector<uint64_t> ids;
+		auto subinterpreterDestroy = pool.EnqueueForAll(subinterpreters, [&mtx, &ids](PySubinterpreterObject* subinterpreter)
+		{
+			auto id = DestroyOnThread();
+
+			{
+				std::lock_guard lock(mtx);
+				ids.push_back(id);
+			}
 		});
 		
+		// Wait for destroys to return from all threads
 		for (auto& result : subinterpreterDestroy)
 			result.get();
+
+		// Print destroy message
+		std::stringstream ss;
+		if (!ids.empty())
+		{
+			ss << "Destroyed " << ids.size() << " subinterpreters:";
+			for (const uint64_t& id : ids)
+				ss << " " << id;
+		}
+		else ss << "No subinterpreters destroyed on threads";
+   		Out() << "[auto_graph] " << ss.str() << std::endl;
 
 		// Cleanup subinterpreters
 		for (auto& subinterpreter : subinterpreters)

@@ -16,22 +16,16 @@ namespace Pragmatic::auto_graph
 	Graph::Graph()
 	{
 		PROFILE_FUNCTION();
-
-		Out() << "[auto_graph] Graph ctor" << std::endl;
 	}
 
 	Graph::~Graph()
 	{
 		PROFILE_FUNCTION();
-
-		Out() << "[auto_graph] Graph dtor" << std::endl;
 	}
 
 	int Graph::PyClassInit(PyClass* self, PyObject* args, PyObject* kwds)
 	{
 		PROFILE_FUNCTION();
-
-		Out() << "[auto_graph] Graph init" << std::endl;
 
 		return 0;
 	}
@@ -39,8 +33,6 @@ namespace Pragmatic::auto_graph
 	void Graph::PyClassDestruct(PyClass* self)
 	{
 		PROFILE_FUNCTION();
-
-		Out() << "[auto_graph] Graph deinit" << std::endl;
 	}
 
 	Node* Graph::GetNodeByName(const std::string& name)
@@ -146,7 +138,6 @@ namespace Pragmatic::auto_graph
 
 		auto name = std::string(name_cstr);
 
-		Out() << "[auto_graph] Added node: " << name << std::endl;
 		AddNode(name, task);
 
 		Py_RETURN_NONE;
@@ -168,7 +159,6 @@ namespace Pragmatic::auto_graph
 		auto fromName = std::string(fromNameCStr);
 		auto toName = std::string(toNameCStr);
 
-		Out() << "[auto_graph] Added edge: [" << fromNameCStr << ", " << toName << "]"<< std::endl;
 		AddEdge(fromName, toName, task);
 
 		Py_RETURN_NONE;

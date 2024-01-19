@@ -17,22 +17,16 @@ namespace Pragmatic::auto_graph
 	Task::Task()
 	{
 		PROFILE_FUNCTION();
-
-		Out() << "[auto_graph] Task ctor" << std::endl;
 	}
 
 	Task::~Task()
 	{
 		PROFILE_FUNCTION();
-
-		Out() << "[auto_graph] Task dtor" << std::endl;
 	}
 
 	int Task::PyClassInit(PyClass* self, PyObject* args, PyObject* kwds)
 	{
 		PROFILE_FUNCTION();
-
-		Out() << "[auto_graph] Task init" << std::endl;
 
 		if (PyTuple_Size(args) < 1)
 		{
@@ -65,8 +59,6 @@ namespace Pragmatic::auto_graph
 	{
 		PROFILE_FUNCTION();
 
-		Out() << "[auto_graph] Task destruct" << std::endl;
-
 		if (callable) Py_DECREF(callable);
 		if (args) Py_DECREF(args);
 	}
@@ -77,7 +69,8 @@ namespace Pragmatic::auto_graph
 
 		PyRef mergedArgs = merge_tuples(this->args, args);
 
-		PyObject_Print(args, stdout, 0);
+		
+		// PyObject_Print(args, stdout, 0);
 
 		PyObject* funcCode = PyFunction_GetCode(callable);
 		if (!funcCode)
