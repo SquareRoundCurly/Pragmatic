@@ -9,7 +9,7 @@
 			"type": "python",
 			"request": "launch",
 			"windows": {
-				"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python.exe",
+				"python": "${workspaceFolder}/external/cpython/PCBuild/amd64/python_d.exe",
 			},
 			"linux": {
 				"python": "${workspaceFolder}/external/cpython/python"

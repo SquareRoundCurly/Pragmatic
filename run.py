@@ -1,70 +1,26 @@
 import auto_graph
+import os
 
-def reimport_test_func():
-	import sys
-	import importlib
-	from pathlib import Path
-	sys.path.append(str(Path(__file__).parent.parent.parent.absolute()))
+def delete_file(file_path):
+    if os.path.exists(file_path):
+        os.remove(file_path)
 
-	try:
-		import auto_graph
-	except:
-		print("couldn't import auto_graph")
+def execute_command(command):
+    import subprocess
+    try:
+        return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    
+    except subprocess.CalledProcessError as e:
+        return e
+    
+dir = 'tests/3_graph'
 
-	importlib.reload(auto_graph)
+delete_file(f'{dir}/HelloWorld.exe')
 
-	import sys
-	if 'auto_graph' in sys.modules:
-		del sys.modules['auto_graph']
-	import auto_graph
+t1 = auto_graph.Task(execute_command, f'clang {dir}/HelloWorld.cpp -o {dir}/HelloWorld.exe')
+result = t1.exec()
+print(result.stdout)
 
-timer = auto_graph.ScopeTimer('run.py')
-
-def print_node(node_name):
-	auto_graph.print(f'printing from node: {node_name}')
-
-def print_edge(from_node, to_node):
-	auto_graph.print(f'printing from edge: {from_node} -> {to_node}')
-
-g = auto_graph.Graph()
-g.add_node('a', auto_graph.Task(print_node))
-g.add_node('b', auto_graph.Task(print_node))
-g.add_node('c', auto_graph.Task(print_node))
-g.add_node('d', auto_graph.Task(print_node))
-g.add_node('e', auto_graph.Task(print_node))
-g.add_edge('a', 'b', auto_graph.Task(print_edge))
-g.add_edge('a', 'c', auto_graph.Task(print_edge))
-g.add_edge('b', 'd', auto_graph.Task(print_edge))
-g.add_edge('b', 'e', auto_graph.Task(print_edge))
-gens = g.topological_generations()
-
-for	gen in gens:
-	line_str = ''
-	for node in gen:
-		line_str += node + ' '
-	print(line_str)
-
-auto_graph.print(g)
-
-g.run_tasks()
-
-def test_func(a, b):
-	return a + b
-t = auto_graph.Task(test_func, 1)
-result = t.exec(2, 3, 4)
-auto_graph.print(result)
-
-def nested():
-	def test_func_nested(a, b):
-		return a + b
-	t = auto_graph.Task(test_func_nested, 1)
-	result = t.exec(2, 3, 4)
-	auto_graph.print(result)
-nested()
-
-del timer
-
-
-reimport_test_func()
-
-pass
+t2 = auto_graph.Task(execute_command, f'{dir}/HelloWorld.exe')
+result = t2.exec()
+print(result.stdout)

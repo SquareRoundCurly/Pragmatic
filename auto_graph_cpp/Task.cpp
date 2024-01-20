@@ -69,14 +69,10 @@ namespace Pragmatic::auto_graph
 
 		PyRef mergedArgs = merge_tuples(this->args, args);
 
-		
-		// PyObject_Print(args, stdout, 0);
-
 		PyObject* funcCode = PyFunction_GetCode(callable);
 		if (!funcCode)
-		{
 			return NULL; // Not a function or other error.
-		}
+
 		PyCodeObject* codeObj = (PyCodeObject*)funcCode;
 
     	Py_ssize_t expectedArgsCount = codeObj->co_argcount;
@@ -100,6 +96,8 @@ namespace Pragmatic::auto_graph
 			PyObject* slicedArgs = PyTuple_GetSlice(mergedArgs, 0, expectedArgsCount);
 			mergedArgs = slicedArgs;
 		}
+
+		PyObject_Print(mergedArgs, stdout, 0);
 
 		PyObject* result = GetModule<auto_graph_cpp>()->interpreters[1]->Execute(callable, mergedArgs, kwargs);
 

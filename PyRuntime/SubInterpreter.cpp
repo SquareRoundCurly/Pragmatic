@@ -114,7 +114,7 @@ namespace
 
 			PyThreadState_Swap(oldState);
 
-			Py_INCREF(result);
+			if (result) Py_INCREF(result);
 			return result;
 		};
 	}
