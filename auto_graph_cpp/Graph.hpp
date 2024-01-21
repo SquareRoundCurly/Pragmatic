@@ -3,6 +3,7 @@
 // Standard library
 #include <vector>
 #include <string>
+#include <list>
 
 // auto_graph
 #include "Node.hpp"
@@ -36,7 +37,7 @@ namespace Pragmatic::auto_graph
 		PyObject* RunTasks(PyObject* self, PyObject* args);
 
 		private:
-		std::vector<Node> nodes;
+		std::list<Node> nodes;
     	std::vector<Edge> edges;
 		std::vector<std::vector<Node*>> generations;
 	};

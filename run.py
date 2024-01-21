@@ -1,26 +1,44 @@
 import auto_graph
-import os
+
+dir = 'tests/3_graph/multi_file'
 
 def delete_file(file_path):
+    import os
     if os.path.exists(file_path):
         os.remove(file_path)
 
-def execute_command(command):
+def compile(from_node, to_node):
     import subprocess
-    try:
-        return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    
-    except subprocess.CalledProcessError as e:
-        return e
-    
-dir = 'tests/3_graph'
 
-delete_file(f'{dir}/HelloWorld.exe')
+    auto_graph.print(f'{from_node} -> {to_node}')
+    subprocess.run(f'clang -c {dir}/{from_node} -o {dir}/{to_node}')
 
-t1 = auto_graph.Task(execute_command, f'clang {dir}/HelloWorld.cpp -o {dir}/HelloWorld.exe')
-result = t1.exec()
-print(result.stdout)
+def link(from_node, to_node):
+    import subprocess
 
-t2 = auto_graph.Task(execute_command, f'{dir}/HelloWorld.exe')
-result = t2.exec()
-print(result.stdout)
+    auto_graph.print(f'{from_node} -> {to_node}')
+    subprocess.run(f'clang -fuse-ld=lld -o {dir}/{to_node} {dir}/Main.o {dir}/SomeClass.o')
+
+delete_file(f'{dir}/Main.o')
+delete_file(f'{dir}/SomeClass.o')
+delete_file(f'{dir}/SomeProgram.exe')
+
+g = auto_graph.Graph()
+
+g.add_node('Main.cpp')
+g.add_node('SomeClass.cpp')
+
+g.add_node('Main.o')
+g.add_node('SomeClass.o')
+
+g.add_edge('Main.cpp', 'Main.o', auto_graph.Task(compile))
+g.add_edge('SomeClass.cpp', 'SomeClass.o', auto_graph.Task(compile))
+
+g.add_node('objects')
+g.add_edge('Main.o', 'objects')
+g.add_edge('SomeClass.o', 'objects')
+
+g.add_node('SomeProgram.exe')
+g.add_edge('objects', 'SomeProgram.exe', auto_graph.Task(link))
+
+g.run_tasks()

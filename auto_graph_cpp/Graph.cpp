@@ -4,6 +4,7 @@
 // Standard library
 #include <queue>
 #include <set>
+#include <unordered_map>
 
 // auto_graph
 #include "Out.hpp"
@@ -53,72 +54,69 @@ namespace Pragmatic::auto_graph
         return &nodes.back();
     }
 
-    void Graph::AddEdge(const std::string& fromName, const std::string& toName, PyObject* task)
+	void Graph::AddEdge(const std::string& fromName, const std::string& toName, PyObject* task)
 	{
-        Node* fromNode = GetNodeByName(fromName);
-        Node* toNode = GetNodeByName(toName);
+		Node* fromNode = GetNodeByName(fromName);
+		Node* toNode = GetNodeByName(toName);
 
-        if (fromNode && toNode)
+		auto newEdge = Edge(fromNode, toNode, task);
+
+		auto it = std::find_if(edges.begin(), edges.end(), [&newEdge](const Edge& edge)
 		{
-            edges.emplace_back(fromNode, toNode, task);
-        }
-    }
+			return newEdge.from == edge.from && newEdge.to == edge.to;
+		});
+
+		if (it == edges.end() && fromNode && toNode)
+		{
+			edges.emplace_back(fromNode, toNode, task);
+		}
+	}
 
 	std::vector<std::vector<Node*>> Graph::TopologicalSort()
 	{
+		std::unordered_map<Node*, int> incomingEdgesCount;
+		std::queue<Node*> processQueue;
 		std::vector<std::vector<Node*>> generations;
-		std::queue<Node*> nodesQueue;
 
-		// Initialize nodes with no incoming edges
-		for (Node& node : nodes)
+		// Initialize incoming edges count
+		for (auto& node : nodes)
+			incomingEdgesCount[&node] = 0;
+
+		// Count incoming edges for each node
+		for (auto& edge : edges)
+			incomingEdgesCount[edge.to]++;
+
+		// Enqueue nodes with no incoming edges
+		for (auto& node : nodes)
+			if (incomingEdgesCount[&node] == 0)
+				processQueue.push(&node);
+
+		// Process nodes generation by generation
+		while (!processQueue.empty())
 		{
-			bool hasIncomingEdges = std::any_of(edges.begin(), edges.end(),
-				[&node](const Edge& edge) { return edge.to == &node; });
+			int generationSize = processQueue.size();
+			std::vector<Node*> currentGeneration;
 
-			if (!hasIncomingEdges)
-				nodesQueue.push(&node);
-		}
-
-		while (!nodesQueue.empty())
-		{
-			int currentGeneration = generations.size();
-			generations.push_back(std::vector<Node*>());
-
-			int currentGenerationSize = nodesQueue.size();
-			for (int i = 0; i < currentGenerationSize; ++i)
+			for (int i = 0; i < generationSize; ++i)
 			{
-				Node* currentNode = nodesQueue.front();
-				nodesQueue.pop();
+				Node* currentNode = processQueue.front();
+				processQueue.pop();
+				currentGeneration.push_back(currentNode);
 
-				currentNode->generation = currentGeneration;
-				generations[currentGeneration].push_back(currentNode);
-
-				// Find all nodes dependent on the current node
-				std::vector<Node*> dependentNodes;
-				for (const Edge& edge : edges)
+				// Decrement the incoming edge count for each dependent node
+				for (auto& edge : edges)
 				{
 					if (edge.from == currentNode)
 					{
-						Node* toNode = edge.to;
-						dependentNodes.push_back(toNode);
-					}
-				}
-
-				// Check if dependent nodes can be processed
-				for (Node* dependentNode : dependentNodes)
-				{
-					bool allIncomingProcessed = std::all_of(edges.begin(), edges.end(),
-						[dependentNode](const Edge& inEdge)
-						{
-							return inEdge.to == dependentNode || dependentNode->generation != -1;
-						});
-
-					if (allIncomingProcessed)
-					{
-						nodesQueue.push(dependentNode);
+						Node* dependentNode = edge.to;
+						incomingEdgesCount[dependentNode]--;
+						if (incomingEdgesCount[dependentNode] == 0)
+							processQueue.push(dependentNode);
 					}
 				}
 			}
+
+			generations.push_back(currentGeneration);
 		}
 
 		return generations;
@@ -222,7 +220,7 @@ namespace Pragmatic::auto_graph
 						if (edge.task)
 						{
 							PyObject* from_node_name = PyUnicode_DecodeUTF8(edge.from->name.c_str(), edge.from->name.size(), "strict");
-							PyObject* to_node_name = PyUnicode_DecodeUTF8(edge.to->name.c_str(), edge.from->name.size(), "strict");
+							PyObject* to_node_name = PyUnicode_DecodeUTF8(edge.to->name.c_str(), edge.to->name.size(), "strict");
 							PyObject* args_tuple = PyTuple_Pack(2, from_node_name, to_node_name);
 
 							auto& edgeTask = ConvertPyObjectToTask(edge.task);
