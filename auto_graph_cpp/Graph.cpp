@@ -283,8 +283,10 @@ namespace Pragmatic::auto_graph
 						// Execute the edge's task
 						if (edge.task)
 						{
-							PyObject* from_node_name = PyUnicode_DecodeUTF8(edge.from->name.c_str(), edge.from->name.size(), "strict");
-							PyObject* to_node_name = PyUnicode_DecodeUTF8(edge.to->name.c_str(), edge.to->name.size(), "strict");
+							// PyObject* from_node_name = PyUnicode_DecodeUTF8(edge.from->name.c_str(), edge.from->name.size(), "strict");
+							// PyObject* to_node_name = PyUnicode_DecodeUTF8(edge.to->name.c_str(), edge.to->name.size(), "strict");
+							PyObject* from_node_name = Convert(edge.from);
+							PyObject* to_node_name =Convert(edge.to);
 							PyObject* args_tuple = PyTuple_Pack(2, from_node_name, to_node_name);
 
 							auto& edgeTask = ConvertPyObjectToTask(edge.task);

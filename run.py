@@ -7,17 +7,17 @@ def delete_file(file_path):
     if os.path.exists(file_path):
         os.remove(file_path)
 
-def compile(from_node, to_node):
+def compile(g, from_node, to_node):
     import subprocess
 
-    auto_graph.print(f'{from_node} -> {to_node}')
-    subprocess.run(f'clang -c {dir}/{from_node} -o {dir}/{to_node}')
+    auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
+    subprocess.run(f'clang -c {dir}/{from_node.name()} -o {dir}/{to_node.name()}')
 
-def link(from_node, to_node):
+def link(g, from_node, to_node):
     import subprocess
 
-    auto_graph.print(f'{from_node} -> {to_node}')
-    subprocess.run(f'clang -fuse-ld=lld -o {dir}/{to_node} {dir}/Main.o {dir}/SomeClass.o')
+    auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
+    subprocess.run(f'clang -fuse-ld=lld -o {dir}/{to_node.name()} {" ".join(f"{dir}/{node.name()}" for node in g.get_parents("objects"))}')
 
 delete_file(f'{dir}/Main.o')
 delete_file(f'{dir}/SomeClass.o')
@@ -31,15 +31,15 @@ g.add_node('SomeClass.cpp')
 g.add_node('Main.o')
 g.add_node('SomeClass.o')
 
-g.add_edge('Main.cpp', 'Main.o', auto_graph.Task(compile))
-g.add_edge('SomeClass.cpp', 'SomeClass.o', auto_graph.Task(compile))
+g.add_edge('Main.cpp', 'Main.o', auto_graph.Task(compile, g))
+g.add_edge('SomeClass.cpp', 'SomeClass.o', auto_graph.Task(compile, g))
 
 g.add_node('objects')
 g.add_edge('Main.o', 'objects')
 g.add_edge('SomeClass.o', 'objects')
 
 g.add_node('SomeProgram.exe')
-g.add_edge('objects', 'SomeProgram.exe', auto_graph.Task(link))
+g.add_edge('objects', 'SomeProgram.exe', auto_graph.Task(link, g))
 
 g.run_tasks()
 
