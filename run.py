@@ -42,3 +42,14 @@ g.add_node('SomeProgram.exe')
 g.add_edge('objects', 'SomeProgram.exe', auto_graph.Task(link))
 
 g.run_tasks()
+
+node = auto_graph.Node("new node")
+
+auto_graph.print(node.name())
+
+auto_graph.print(g.get_node('Main.cpp').name())
+
+
+auto_graph.print(f'Parents of objects: {" ".join(node.name() for node in g.get_parents("objects"))}')
+
+pass

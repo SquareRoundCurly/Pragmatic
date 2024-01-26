@@ -72,6 +72,28 @@ namespace Pragmatic::auto_graph
 		}
 	}
 
+	std::vector<Node*> Graph::GetParentNodes(const std::string& nodeName)
+	{
+		std::vector<Node*> parentNodes;
+		Node* targetNode = GetNodeByName(nodeName);
+
+		if (targetNode == nullptr)
+		{
+			// Node not found, return empty vector
+			return parentNodes;
+		}
+
+		for (auto& edge : edges)
+		{
+			if (edge.to == targetNode)
+			{
+				parentNodes.push_back(edge.from);
+			}
+		}
+
+		return parentNodes;
+	}
+
 	std::vector<std::vector<Node*>> Graph::TopologicalSort()
 	{
 		std::unordered_map<Node*, int> incomingEdgesCount;
@@ -187,6 +209,48 @@ namespace Pragmatic::auto_graph
 		}
 
 		return result_list;
+	}
+
+	PyObject* Convert(Node* node)
+	{
+		PyNode* pyNode = PyObject_New(PyNode, GetPyTypeObject());
+		if (pyNode != NULL)
+		{
+			pyNode->node = node;
+			pyNode->owner = Owner::CPP;  // The Python object does not own the C++ object
+		}
+		return (PyObject*)pyNode;
+	}
+
+	PyObject *Graph::GetNode(PyObject *self, PyObject *args)
+	{
+		const char* name_cstr;
+		if (!PyArg_ParseTuple(args, "s", &name_cstr))
+		{
+			ThrowPythonError("Expected a str name");
+		}
+
+		return Convert(GetNodeByName(name_cstr));
+	}
+
+	PyObject* Graph::GetParentNodes(PyObject* self, PyObject* args)
+	{
+		const char* nodeNameCStr;
+		if (!PyArg_ParseTuple(args, "s", &nodeNameCStr))
+		{
+			ThrowPythonError("Expected a str name");
+			return nullptr;
+		}
+
+		auto parentNodes = GetParentNodes(nodeNameCStr);
+
+		PyObject* resultList = PyList_New(0);
+		for (auto& node : parentNodes)
+		{
+			PyList_Append(resultList, Convert(node));
+		}
+
+		return resultList;
 	}
 
 	PyObject* Graph::RunTasks(PyObject* self, PyObject* args)
