@@ -99,7 +99,7 @@ namespace Pragmatic::auto_graph
 
 		PyObject_Print(mergedArgs, stdout, 0);
 
-		PyObject* result = GetModule<auto_graph_cpp>()->interpreters[1]->Execute(callable, mergedArgs, kwargs);
+		PyObject* result = GetModule<auto_graph_cpp>()->subInterpreter->Execute(callable, mergedArgs, kwargs);
 
 		if (!result)
 		{

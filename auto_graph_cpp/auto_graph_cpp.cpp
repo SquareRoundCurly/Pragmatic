@@ -6,9 +6,7 @@
 
 // auto_graph
 #include "Out.hpp"
-#include "PyRuntime/MainInterpreter.hpp"
 #include "PyRuntime/SubInterpreter.hpp"
-#include "PyRuntime/ProcessInterpreter.hpp"
 #include "PyRuntime/PythonUtils.hpp"
 #include "PyRuntime/PyRef.hpp"
 #include "Instrumentation.hpp"
@@ -28,9 +26,7 @@ namespace Pragmatic::auto_graph
 	{
 		PROFILE_FUNCTION();
 
-		interpreters[0] = MainInterpreter::Get();
-		interpreters[1] = new SubInterpreter();
-		interpreters[2] = new ProcessInterpreter();
+		subInterpreter = new SubInterpreter();
 	}
 
 	auto_graph_cpp::~auto_graph_cpp()
@@ -43,10 +39,8 @@ namespace Pragmatic::auto_graph
 
 		Out() << "[auto_graph] " << "cleanup" << std::endl;
 
-		static_cast<SubInterpreter*>(interpreters[1])->~SubInterpreter();
-		delete interpreters[1];
-		static_cast<ProcessInterpreter*>(interpreters[2])->~ProcessInterpreter();
-		delete interpreters[2];
+		// subInterpreter->~SubInterpreter();
+		delete subInterpreter;
 		
 		Py_RETURN_NONE;
 	}
@@ -57,9 +51,7 @@ namespace Pragmatic::auto_graph
 
 		Out() << "[auto_graph] " << "reinit" << std::endl;
 
-		interpreters[0] = MainInterpreter::Get();
-		interpreters[1] = new SubInterpreter();
-		interpreters[2] = new ProcessInterpreter();
+		subInterpreter = new SubInterpreter();
 
 		Py_RETURN_NONE;
 	}

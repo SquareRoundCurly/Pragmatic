@@ -1,6 +1,7 @@
 import unittest
 import importlib
 from multiprocessing import Process
+from typing import List
 
 def reimport_test_func():
 	import sys
@@ -27,7 +28,7 @@ def reimport_test_func():
 
 class BasicTest(unittest.TestCase):
 	def test_0_imports(self):
-		processes = []
+		processes: List[Process] = []
 
 		# Start 5 subprocesses
 		for _ in range(5):
@@ -37,7 +38,8 @@ class BasicTest(unittest.TestCase):
 
 		# Wait for all subprocesses to finish
 		for p in processes:
-			p.join()
+			if p.is_alive():
+				p.join()
 
 		# Check exit codes
 		for p in processes:
