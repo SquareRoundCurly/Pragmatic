@@ -12,7 +12,7 @@ namespace Pragmatic::auto_graph
 		~SubInterpreter();
 
 		public:
-		PyObject* Execute(PyObject* callable, PyObject* args, PyObject* kwArgs);
+		TaskFuture<std::function<PyObject* ()>> Execute(PyObject* callable, PyObject* args, PyObject* kwArgs);
 
 		private:
 		ThreadPool pool;

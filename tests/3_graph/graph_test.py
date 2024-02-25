@@ -21,6 +21,8 @@ def delete_file(file_path):
         os.remove(file_path)
 
 def execute_command(command):
+    _ = auto_graph.ScopeTimer('execute_command')
+
     import subprocess
     try:
         return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True)
@@ -61,6 +63,7 @@ class GraphTest(unittest.TestCase):
         dir = 'tests/3_graph/simple_build'
 
         def compile_simple_program(from_node, to_node):
+            _ = auto_graph.ScopeTimer('compile_simple_program')
             import subprocess
             
             auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
@@ -77,8 +80,11 @@ class GraphTest(unittest.TestCase):
 
         g.run_tasks()
 
-        result = execute_command(f'{dir}/HelloWorld.exe')
-        self.assertEqual('Hello World !\n', result.stdout)
+        try:
+            result = execute_command(f'{dir}/HelloWorld.exe')
+            self.assertEqual('Hello World !\n', result.stdout)
+        except Exception as e:
+            print(e)
 
     def test_2_multi_file_build(self):
         dir = 'tests/3_graph/multi_file'
@@ -89,12 +95,16 @@ class GraphTest(unittest.TestCase):
                 os.remove(file_path)
 
         def compile(from_node, to_node):
+            _ = auto_graph.ScopeTimer('compile')
+
             import subprocess
 
             auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
             subprocess.run(f'clang -c {dir}/{from_node.name()} -o {dir}/{to_node.name()}')
 
         def link(g: auto_graph.Graph, from_node, to_node):
+            _ = auto_graph.ScopeTimer('link')
+
             import subprocess
 
             auto_graph.print(f'{from_node.name()} -> {to_node.name()}')

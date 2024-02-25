@@ -69,6 +69,8 @@ namespace
 
 	uint64_t InitOnThread(PySubinterpreterObject* pySubinterpreter)
 	{
+		PROFILE_FUNCTION();
+
 		pySubinterpreterTLS.threadState = PyThreadState_New(pySubinterpreter->subinterpreterThreadState->interp);
 		PyEval_RestoreThread(pySubinterpreterTLS.threadState);
 
@@ -77,6 +79,8 @@ namespace
 
 	uint64_t DestroyOnThread()
 	{
+		PROFILE_FUNCTION();
+
 		PyThreadState_Clear(pySubinterpreterTLS.threadState);
 		PyThreadState_DeleteCurrent();
 
@@ -85,6 +89,8 @@ namespace
 
 	std::function<void()> PyRun(const std::string& code)
 	{
+		PROFILE_FUNCTION();
+
 		return [=]()
 		{
 			auto* oldState = PyThreadState_Swap(pySubinterpreterTLS.threadState);
@@ -100,6 +106,9 @@ namespace
 
 	std::function<PyObject*()> PyRun(PyObject* callable, PyObject* args, PyObject* kwArgs)
 	{
+		PROFILE_FUNCTION();
+
+		Py_INCREF(args);
 		return [=]() -> PyObject*
 		{
 			if (!PyCallable_Check(callable))
@@ -114,6 +123,8 @@ namespace
 
 			PyThreadState_Swap(oldState);
 
+			// Py_DECREF(args);
+
 			if (result) Py_INCREF(result);
 			return result;
 		};
@@ -124,6 +135,8 @@ namespace Pragmatic::auto_graph
 {
 	SubInterpreter::SubInterpreter()
 	{
+		PROFILE_FUNCTION();
+
 		// Prepare subinterpreters
 		auto size = pool.Size();
 		
@@ -165,6 +178,8 @@ namespace Pragmatic::auto_graph
 	
 	SubInterpreter::~SubInterpreter()
 	{
+		PROFILE_FUNCTION();
+
 		// Destory on thread
 		std::mutex mtx;
 		std::vector<uint64_t> ids;
@@ -202,11 +217,13 @@ namespace Pragmatic::auto_graph
 		subinterpreters.clear();
 	}
 	
-	PyObject* SubInterpreter::Execute(PyObject* callable, PyObject* args, PyObject* kwArgs)
+	TaskFuture<std::function<PyObject* ()>> SubInterpreter::Execute(PyObject* callable, PyObject* args, PyObject* kwArgs)
 	{
+		PROFILE_FUNCTION();
+		
 		// Run code
 		auto pyFuture = pool.Enqueue(PyRun(callable, args, kwArgs));
 
-		return pyFuture.get();
+		return pyFuture;
 	}
 } // namespace Pragmatic::atuo_graph

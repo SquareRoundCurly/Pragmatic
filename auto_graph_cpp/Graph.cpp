@@ -263,8 +263,11 @@ namespace Pragmatic::auto_graph
 
 		for (auto& generation : generations)
 		{
+			std::vector<std::shared_future<PyObject*>> nodeFutures;
+			std::vector<Node*> nodes;
 			for (auto& node : generation)
 			{
+				nodes.push_back(node);
 				if (node->task)
 				{
 					PyObject* node_name = PyUnicode_DecodeUTF8(node->name.c_str(), node->name.size(), "strict");
@@ -272,9 +275,18 @@ namespace Pragmatic::auto_graph
 					PyObject* args_tuple = PyTuple_Pack(1, node_name);
 
 					auto& task = ConvertPyObjectToTask(node->task);
-					task.Exec(NULL, args_tuple, NULL);
-				}
+					auto nodeFuture = task.ExecFuture(NULL, args_tuple, NULL);
+					nodeFutures.push_back(nodeFuture.share());
 
+				}
+			}
+
+			for (auto& nodeFuture : nodeFutures)
+				nodeFuture.get();
+
+			std::vector<std::shared_future<PyObject*>> edgeFutures;
+			for (auto node : nodes)
+			{
 				// Process outgoing edges for this node
 				for (Edge& edge : edges)
 				{
@@ -290,12 +302,16 @@ namespace Pragmatic::auto_graph
 							PyObject* args_tuple = PyTuple_Pack(2, from_node_name, to_node_name);
 
 							auto& edgeTask = ConvertPyObjectToTask(edge.task);
-							edgeTask.Exec(NULL, args_tuple, NULL);  // You can pass appropriate arguments here
+							auto edgeFuture = edgeTask.ExecFuture(NULL, args_tuple, NULL);  // You can pass appropriate arguments here
+							edgeFutures.push_back(edgeFuture.share());
 						}
 						processedEdges.insert(&edge);
 					}
 				}
 			}
+
+			for (auto& edgeFuture : edgeFutures)
+				edgeFuture.get();
 		}
 
 		Py_RETURN_NONE;

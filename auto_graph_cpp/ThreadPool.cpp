@@ -1,5 +1,6 @@
 // Source header
 #include "ThreadPool.hpp"
+#include "Instrumentation.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -26,7 +27,12 @@ namespace Pragmatic::auto_graph
 			std::function<void()> task;
 			queue.wait_dequeue(task);  // Blocking dequeue
 			if (!task) break;  // nullptr task signifies shutdown
-			task();
+
+			{
+				PROFILE_SCOPE("ThreadPool task execution");
+				
+				task();
+			}
 		}
 	}
 

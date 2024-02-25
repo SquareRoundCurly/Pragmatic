@@ -86,13 +86,31 @@ namespace Pragmatic::auto_graph
 		PROFILE_FUNCTION();
 
 		auto [task, res] = CreateTaskAndFuture(std::forward<F>(f), std::forward<Args>(args)...);
+		static auto lastSelectedWorker = workers.begin();
 
-		auto selectedWorker = std::min_element(workers.begin(), workers.end(), [](const auto& a, const auto& b)
-		{
+		// Find the next worker to start from, wrap around if necessary
+		auto startWorker = lastSelectedWorker;
+		if (++startWorker == workers.end()) {
+			startWorker = workers.begin();
+		}
+
+		// Find the least loaded worker starting from 'startWorker'
+		auto selectedWorker = std::min_element(startWorker, workers.end(), [](const auto& a, const auto& b) {
 			return a->GetApproximateSize() < b->GetApproximateSize();
 		});
 
+		// If no suitable worker was found from 'startWorker' to the end, wrap around and search from the beginning
+		if (selectedWorker == workers.end()) {
+			selectedWorker = std::min_element(workers.begin(), startWorker, [](const auto& a, const auto& b) {
+				return a->GetApproximateSize() < b->GetApproximateSize();
+			});
+		}
+
+		// Enqueue the task to the selected worker
 		(*selectedWorker)->EnqueueTask([task]() { (*task)(); });
+
+		// Update the last selected worker
+		lastSelectedWorker = selectedWorker;
 
 		return std::move(res);
 	}
