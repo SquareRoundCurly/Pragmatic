@@ -63,8 +63,8 @@ class GraphTest(unittest.TestCase):
         def compile_simple_program(from_node, to_node):
             import subprocess
             
-            auto_graph.print(f'{from_node} -> {to_node}')
-            subprocess.run(f'clang {dir}/{from_node} -o {dir}/{to_node}')
+            auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
+            subprocess.run(f'clang {dir}/{from_node.name()} -o {dir}/{to_node.name()}')
 
         delete_file(f'{dir}/HelloWorld.exe')
 
@@ -91,14 +91,14 @@ class GraphTest(unittest.TestCase):
         def compile(from_node, to_node):
             import subprocess
 
-            auto_graph.print(f'{from_node} -> {to_node}')
-            subprocess.run(f'clang -c {dir}/{from_node} -o {dir}/{to_node}')
+            auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
+            subprocess.run(f'clang -c {dir}/{from_node.name()} -o {dir}/{to_node.name()}')
 
         def link(from_node, to_node):
             import subprocess
 
-            auto_graph.print(f'{from_node} -> {to_node}')
-            subprocess.run(f'clang -fuse-ld=lld -o {dir}/{to_node} {dir}/Main.o {dir}/SomeClass.o')
+            auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
+            subprocess.run(f'clang -fuse-ld=lld -o {dir}/{to_node.name()} {dir}/Main.o {dir}/SomeClass.o')
 
         delete_file(f'{dir}/Main.o')
         delete_file(f'{dir}/SomeClass.o')
