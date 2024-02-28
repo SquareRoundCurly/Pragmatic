@@ -4,136 +4,169 @@ import auto_graph
 import os
 
 def list_to_nested_set(lst):
-    if not lst:
-        return set()  # Return an empty set if the input list is empty
+	if not lst:
+		return set()  # Return an empty set if the input list is empty
 
-    nested_set = set()
-    for item in lst:
-        if isinstance(item, list):
-            nested_set.add(list_to_nested_set(item))
-        else:
-            nested_set.add(item)
+	nested_set = set()
+	for item in lst:
+		if isinstance(item, list):
+			nested_set.add(list_to_nested_set(item))
+		else:
+			nested_set.add(item)
 
-    return nested_set
+	return nested_set
 
 def delete_file(file_path):
-    if os.path.exists(file_path):
-        os.remove(file_path)
+	if os.path.exists(file_path):
+		os.remove(file_path)
 
 def execute_command(command):
-    _ = auto_graph.ScopeTimer('execute_command')
+	_ = auto_graph.ScopeTimer('execute_command')
 
-    import subprocess
-    try:
-        return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True)
-    
-    except subprocess.CalledProcessError as e:
-        return e
+	import subprocess
+	try:
+		return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True)
+	
+	except subprocess.CalledProcessError as e:
+		return e
 
 class GraphTest(unittest.TestCase):
-    def test_0_simple_graph(self):
-        g = auto_graph.Graph()
-        
-        g.add_node('a')
-        g.add_node('b')
-        g.add_node('c')
-        g.add_node('d')
-        g.add_node('e')
-        g.add_edge('a', 'b')
-        g.add_edge('a', 'c')
-        g.add_edge('b', 'd')
-        g.add_edge('b', 'e')
+	def test_0_simple_graph(self):
+		g = auto_graph.Graph()
+		
+		g.add_node('a')
+		g.add_node('b')
+		g.add_node('c')
+		g.add_node('d')
+		g.add_node('e')
+		g.add_edge('a', 'b')
+		g.add_edge('a', 'c')
+		g.add_edge('b', 'd')
+		g.add_edge('b', 'e')
 
-        gens = g.topological_generations()
+		gens = g.topological_generations()
 
-        set_gens = []
-        for gen in gens:
-            set_gens.append(list_to_nested_set(gen))
-        
-        truth_sets = [
-            {'a'},
-            {'b', 'c'},
-            {'d', 'e'}
-            ]
+		set_gens = []
+		for gen in gens:
+			set_gens.append(list_to_nested_set(gen))
+		
+		truth_sets = [
+			{'a'},
+			{'b', 'c'},
+			{'d', 'e'}
+			]
 
-        for i in range(len(set_gens)):
-            self.assertSetEqual(truth_sets[i], set_gens[i])
+		for i in range(len(set_gens)):
+			self.assertSetEqual(truth_sets[i], set_gens[i])
 
-    def test_1_simple_build(self):
-        dir = 'tests/3_graph/simple_build'
+	def test_1_simple_build(self):
+		dir = 'tests/3_graph/simple_build'
 
-        def compile_simple_program(from_node, to_node):
-            _ = auto_graph.ScopeTimer('compile_simple_program')
-            import subprocess
-            
-            auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
-            subprocess.run(f'clang {dir}/{from_node.name()} -o {dir}/{to_node.name()}')
+		def compile_simple_program(from_node, to_node):
+			_ = auto_graph.ScopeTimer('compile_simple_program')
+			import subprocess
+			
+			auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
+			subprocess.run(f'clang {dir}/{from_node.name()} -o {dir}/{to_node.name()}')
 
-        delete_file(f'{dir}/HelloWorld.exe')
+		delete_file(f'{dir}/HelloWorld.exe')
 
-        g = auto_graph.Graph()
+		g = auto_graph.Graph()
 
-        g.add_node('HelloWorld.cpp')
-        g.add_node('HelloWorld.exe')
+		g.add_node('HelloWorld.cpp')
+		g.add_node('HelloWorld.exe')
 
-        g.add_edge('HelloWorld.cpp', 'HelloWorld.exe', auto_graph.Task(compile_simple_program))
+		g.add_edge('HelloWorld.cpp', 'HelloWorld.exe', auto_graph.Task(compile_simple_program))
 
-        g.run_tasks()
+		g.run_tasks()
 
-        try:
-            result = execute_command(f'{dir}/HelloWorld.exe')
-            self.assertEqual('Hello World !\n', result.stdout)
-        except Exception as e:
-            print(e)
+		try:
+			result = execute_command(f'{dir}/HelloWorld.exe')
+			self.assertEqual('Hello World !\n', result.stdout)
+		except Exception as e:
+			print(e)
 
-    def test_2_multi_file_build(self):
-        dir = 'tests/3_graph/multi_file'
+	def test_2_multi_file_build(self):
+		dir = 'tests/3_graph/multi_file'
 
-        def delete_file(file_path):
-            import os
-            if os.path.exists(file_path):
-                os.remove(file_path)
+		def delete_file(file_path):
+			import os
+			if os.path.exists(file_path):
+				os.remove(file_path)
 
-        def compile(from_node, to_node):
-            _ = auto_graph.ScopeTimer('compile')
+		def compile(from_node, to_node):
+			_ = auto_graph.ScopeTimer('compile')
 
-            import subprocess
+			import subprocess
 
-            auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
-            subprocess.run(f'clang -c {dir}/{from_node.name()} -o {dir}/{to_node.name()}')
+			auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
+			subprocess.run(f'clang -c {dir}/{from_node.name()} -o {dir}/{to_node.name()}')
 
-        def link(g: auto_graph.Graph, from_node, to_node):
-            _ = auto_graph.ScopeTimer('link')
+		def link(g: auto_graph.Graph, from_node, to_node):
+			_ = auto_graph.ScopeTimer('link')
 
-            import subprocess
+			import subprocess
 
-            auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
-            objs = f' '.join(f'{dir}/{node.name()}' for node in g.get_parents(from_node.name()))
-            subprocess.run(f'clang -fuse-ld=lld -o {dir}/{to_node.name()} {objs}')
+			auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
+			objs = f' '.join(f'{dir}/{node.name()}' for node in g.get_parents(from_node.name()))
+			subprocess.run(f'clang -fuse-ld=lld -o {dir}/{to_node.name()} {objs}')
 
-        delete_file(f'{dir}/Main.o')
-        delete_file(f'{dir}/SomeClass.o')
-        delete_file(f'{dir}/SomeProgram.exe')
+		delete_file(f'{dir}/Main.o')
+		delete_file(f'{dir}/SomeClass.o')
+		delete_file(f'{dir}/SomeProgram.exe')
 
-        g = auto_graph.Graph()
+		g = auto_graph.Graph()
 
-        g.add_node('Main.cpp')
-        g.add_node('SomeClass.cpp')
+		g.add_node('Main.cpp')
+		g.add_node('SomeClass.cpp')
 
-        g.add_node('Main.o')
-        g.add_node('SomeClass.o')
+		g.add_node('Main.o')
+		g.add_node('SomeClass.o')
 
-        g.add_edge('Main.cpp', 'Main.o', auto_graph.Task(compile))
-        g.add_edge('SomeClass.cpp', 'SomeClass.o', auto_graph.Task(compile))
+		g.add_edge('Main.cpp', 'Main.o', auto_graph.Task(compile))
+		g.add_edge('SomeClass.cpp', 'SomeClass.o', auto_graph.Task(compile))
 
-        g.add_node('objects')
-        g.add_edge('Main.o', 'objects')
-        g.add_edge('SomeClass.o', 'objects')
+		g.add_node('objects')
+		g.add_edge('Main.o', 'objects')
+		g.add_edge('SomeClass.o', 'objects')
 
-        g.add_node('SomeProgram.exe')
-        g.add_edge('objects', 'SomeProgram.exe', auto_graph.Task(link, g))
+		g.add_node('SomeProgram.exe')
+		g.add_edge('objects', 'SomeProgram.exe', auto_graph.Task(link, g))
 
-        g.run_tasks()
+		g.run_tasks()
 
-        result = execute_command(f'{dir}/SomeProgram.exe')
-        self.assertEqual('42\n', result.stdout)
+		result = execute_command(f'{dir}/SomeProgram.exe')
+		self.assertEqual('42\n', result.stdout)
+		
+	def test_3_simple_rebuild(self):
+		dir = 'tests/3_graph/simple_build'
+
+		def hash_cpp_and_exe_exists():
+			return auto_graph.hash.store_and_verify_hash(f'{dir}/HelloWorld.cpp', f'{dir}/file_hashes.json') and os.path.exists(f'{dir}/HelloWorld.exe')
+		
+		def hash_exe():
+			return auto_graph.hash.store_and_verify_hash(f'{dir}/HelloWorld.exe', f'{dir}/file_hashes.json')
+
+		def compile_simple_program(from_node, to_node):
+			_ = auto_graph.ScopeTimer('compile_simple_program')
+			import subprocess
+			
+			auto_graph.print(f'{from_node.name()} -> {to_node.name()}')
+			subprocess.run(f'clang {dir}/{from_node.name()} -o {dir}/{to_node.name()}')
+
+		delete_file(f'{dir}/HelloWorld.exe')
+
+		g = auto_graph.Graph()
+
+		g.add_node('HelloWorld.cpp', auto_graph.Task(hash_cpp_and_exe_exists))
+		g.add_node('HelloWorld.exe', auto_graph.Task(hash_exe))
+
+		g.add_edge('HelloWorld.cpp', 'HelloWorld.exe', auto_graph.Task(compile_simple_program))
+
+		g.run_tasks()
+
+		try:
+			result = execute_command(f'{dir}/HelloWorld.exe')
+			self.assertEqual('Hello World !\n', result.stdout)
+		except Exception as e:
+			print(e)

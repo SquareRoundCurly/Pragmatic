@@ -4,6 +4,7 @@
 // Standard library
 #include <queue>
 #include <set>
+#include <map>
 #include <unordered_map>
 
 // auto_graph
@@ -264,6 +265,7 @@ namespace Pragmatic::auto_graph
 		for (auto& generation : generations)
 		{
 			std::vector<std::shared_future<PyObject*>> nodeFutures;
+			std::map<Node*, PyObject*> nodeResults;
 			std::vector<Node*> nodes;
 			for (auto& node : generation)
 			{
@@ -281,8 +283,15 @@ namespace Pragmatic::auto_graph
 				}
 			}
 
-			for (auto& nodeFuture : nodeFutures)
-				nodeFuture.get();
+			for (size_t i = 0; i < nodeFutures.size(); ++i)
+			{
+				// Capture the result of node tasks
+				PyObject* result = nodeFutures[i].get();
+				nodeResults[nodes[i]] = result;
+
+				// Ensure reference counts are correct, assuming ownership is transferred here
+				Py_XDECREF(result);
+			}
 
 			std::vector<std::shared_future<PyObject*>> edgeFutures;
 			for (auto node : nodes)
@@ -292,18 +301,20 @@ namespace Pragmatic::auto_graph
 				{
 					if (edge.from == node && processedEdges.find(&edge) == processedEdges.end())
 					{
-						// Execute the edge's task
-						if (edge.task)
+						PyObject* nodeResult = nodeResults[node];
+						if (nodeResult == nullptr || nodeResult == Py_None || PyObject_IsTrue(nodeResult) == 0) // Execute if result is None or False
 						{
-							// PyObject* from_node_name = PyUnicode_DecodeUTF8(edge.from->name.c_str(), edge.from->name.size(), "strict");
-							// PyObject* to_node_name = PyUnicode_DecodeUTF8(edge.to->name.c_str(), edge.to->name.size(), "strict");
-							PyObject* from_node_name = Convert(edge.from);
-							PyObject* to_node_name =Convert(edge.to);
-							PyObject* args_tuple = PyTuple_Pack(2, from_node_name, to_node_name);
+							// Execute the edge's task
+							if (edge.task)
+							{
+								PyObject* from_node_name = Convert(edge.from);
+								PyObject* to_node_name =Convert(edge.to);
+								PyObject* args_tuple = PyTuple_Pack(2, from_node_name, to_node_name);
 
-							auto& edgeTask = ConvertPyObjectToTask(edge.task);
-							auto edgeFuture = edgeTask.ExecFuture(NULL, args_tuple, NULL);  // You can pass appropriate arguments here
-							edgeFutures.push_back(edgeFuture.share());
+								auto& edgeTask = ConvertPyObjectToTask(edge.task);
+								auto edgeFuture = edgeTask.ExecFuture(NULL, args_tuple, NULL);  // You can pass appropriate arguments here
+								edgeFutures.push_back(edgeFuture.share());
+							}
 						}
 						processedEdges.insert(&edge);
 					}

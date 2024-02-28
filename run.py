@@ -52,4 +52,15 @@ auto_graph.print(g.get_node('Main.cpp').name())
 
 auto_graph.print(f'Parents of objects: {" ".join(node.name() for node in g.get_parents("objects"))}')
 
+
+
+
+print(f'Result: {auto_graph.hash.store_and_verify_hash("run.py")}')
+print(f'Result: {auto_graph.hash.store_and_verify_hash("run.py")}')
+print(f'Result: {auto_graph.hash.store_and_verify_hash("setup.py")}')
+print(f'Result: {auto_graph.hash.store_and_verify_hash("setup.py")}')
+
+
+
+
 pass
