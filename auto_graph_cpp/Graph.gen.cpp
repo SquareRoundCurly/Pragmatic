@@ -18,6 +18,9 @@ namespace Pragmatic::auto_graph
 		{ "add_node", (PyCFunction)PyGraph::Method<&Graph::AddNode>, METH_VARARGS, "Adds a node to the graph" },
 		{ "add_edge", (PyCFunction)PyGraph::Method<&Graph::AddEdge>, METH_VARARGS, "Adds an edge to the graph" },
 		{ "topological_generations", (PyCFunction)PyGraph::Method<&Graph::TopologicalSort>, METH_VARARGS, "Topologically sorts the graph" },
+		{ "run_tasks", (PyCFunction)PyGraph::Method<&Graph::RunTasks>, METH_VARARGS, "Runs the graph's tasks in order of dependencies" },
+		{ "get_node", (PyCFunction)PyGraph::Method<&Graph::GetNode>, METH_VARARGS, "Returns a node from the graph" },
+		{ "get_parents", (PyCFunction)PyGraph::Method<&Graph::GetParentNodes>, METH_VARARGS, "Return a list of parent nodes" },
 		{ nullptr } // sentinel
 	};
 

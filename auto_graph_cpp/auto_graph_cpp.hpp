@@ -1,14 +1,15 @@
 #pragma once
 
 // Standard library
-#include <vector> 
+#include <vector>
+#include <array>
 
 // External
 #include <pytypedefs.h>
 
 // auto_graph
 #include "PyRuntime/Interfaces.hpp"
-#include "PyRuntime/Interpreter.hpp"
+#include "PyRuntime/SubInterpreter.hpp"
 
 namespace Pragmatic::auto_graph
 {
@@ -25,6 +26,8 @@ namespace Pragmatic::auto_graph
 		PyObject* add_task(PyObject* self, PyObject* args);
 		PyObject* exec(PyObject* self, PyObject* args);
 
+		PyObject* test(PyObject* self, PyObject* args);
+
 		public:
 		virtual int init(PyObject *module) override;
 		virtual int traverse(PyObject* module, visitproc visit, void* arg) override;
@@ -32,7 +35,7 @@ namespace Pragmatic::auto_graph
 		virtual void free(void* module) override;
 
 		public:
-		std::vector<Interpreter*> interpreters;
+		SubInterpreter* subInterpreter;
 		private:
 		std::vector<PyObject*> tasks;
 	};

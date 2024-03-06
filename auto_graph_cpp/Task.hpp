@@ -3,6 +3,7 @@
 // External
 #include <pytypedefs.h>
 
+#include "ThreadPool.hpp"
 #include "PyRuntime/Interfaces.hpp"
 
 namespace Pragmatic::auto_graph
@@ -19,9 +20,12 @@ namespace Pragmatic::auto_graph
 
 		public:
 		PyObject* Exec(PyObject* self, PyObject* args, PyObject* kwargs);
+		TaskFuture<std::function<PyObject* ()>> ExecFuture(PyObject* self, PyObject* args, PyObject* kwargs);
 
 		private:
 		PyObject* callable = nullptr;
 		PyObject* args = nullptr;
 	};
+
+	Task& ConvertPyObjectToTask(PyObject* obj);
 } // namespace Pragmatic::auto_graph
