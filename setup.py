@@ -128,8 +128,13 @@ setup(
 	name         = 'pragmatic',
 	version      = '0.3',
 	description  = 'C++ accelerated parts of auto_graph',
-	packages     = ['auto_graph', 'auto_graph.__private'],
+	packages     = ['auto_graph', 'auto_graph.__private', 'pragmatic_cli'],
 	ext_modules  = [auto_graph_cpp],
 	package_data = { 'auto_graph.__private': ['*.pyd', '*.pyi'] },
+	entry_points = {
+        'console_scripts': [
+            'pragmatic = pragmatic_cli.__main__:cli'
+        ]
+	},
 	cmdclass     = { 'build_ext': CustomBuildExtCommand }
 )
