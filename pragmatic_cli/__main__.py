@@ -1,39 +1,14 @@
 import sys
 
 import click
-from lorem.text import TextLorem
-from openai import OpenAI
 
-def load_api_key(file_path='OAI'):
-    """Load the OpenAI API key from a file."""
-    try:
-        with open(file_path, 'r') as file:
-            return file.read().strip()
-    except FileNotFoundError:
-        raise FileNotFoundError(f"The file {file_path} was not found. Please ensure it exists and contains your OpenAI API key.")
-client = OpenAI(api_key=load_api_key())
+from openai_chat import OpenAIBackend
+from lorem_chat import LoremBackend
 
-# Initialize a Lorem Ipsum generator
-lorem = TextLorem(srange=(4, 8), trange=(2, 20), prange=(1, 3))
-
+# Continue with the previous code for get_input, get_multiline_input, and cli.command with modifications for backend selection
 @click.group()
 def cli():
     pass
-
-def get_lorem_reply():
-    """Function to generate a Lorem Ipsum reply."""
-    return lorem.sentence()
-
-def get_openai_reply(prompt, chat_history):
-    """Function to generate a reply using OpenAI's ChatGPT using the chat completions endpoint, maintaining conversation context."""
-    try:
-        chat_history.append({"role": "user", "content": prompt})
-        response = client.chat.completions.create(model="gpt-4-0125-preview", messages=chat_history)
-        reply = response.choices[0].message.content.strip()
-        chat_history.append({"role": "assistant", "content": reply})
-        return reply
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
 
 def get_input(prompt="> "):
     """Collects either single or multiline input from the user."""
@@ -60,6 +35,11 @@ def get_multiline_input(prompt="> "):
 @click.option('--backend', type=click.Choice(['lorem', 'openai'], case_sensitive=False), prompt="Please choose a backend", help="The backend to use for generating chat replies.")
 def chat(backend):
     """Starts a pragmatic chat that replies with text based on the selected backend, maintaining conversation context for OpenAI backend, and allowing single or multiline inputs."""
+    if backend.lower() == 'openai':
+        backend_instance = OpenAIBackend()
+    else:  # Default to LoremBackend if not OpenAI
+        backend_instance = LoremBackend()
+    
     click.echo(f"Starting chat with {backend} backend. Type 'multiline' for multiline inputs or type and press Enter for single line inputs. Type 'exit' to quit.")
     chat_history = []
 
@@ -68,10 +48,8 @@ def chat(backend):
         if user_input.lower() == 'exit':
             click.echo("Goodbye!")
             break
-        elif backend.lower() == 'lorem':
-            click.echo(get_lorem_reply())
-        elif backend.lower() == 'openai':
-            click.echo(get_openai_reply(user_input, chat_history))
+        reply = backend_instance.get_reply(user_input, chat_history)
+        click.echo(reply)
 
 if __name__ == '__main__':
     cli()
