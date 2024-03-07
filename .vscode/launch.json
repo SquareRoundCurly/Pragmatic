@@ -19,6 +19,19 @@
 			"justMyCode": true
 		},
 		{
+			"name": "Pragmatic CLI",
+			"type": "python",
+			"request": "launch",
+			"program": "${workspaceFolder}/pragmatic_cli/__main__.py",
+			"args": [
+				"chat",
+				"--backend",
+				"openai"
+			],
+			"console": "integratedTerminal",
+			"justMyCode": true
+		},
+		{
 			"name": "Python auto_graph RELEASE",
 			"type": "python",
 			"request": "launch",
