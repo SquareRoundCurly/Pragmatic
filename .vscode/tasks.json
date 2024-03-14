@@ -1,0 +1,13 @@
+{
+	// See https://go.microsoft.com/fwlink/?LinkId=733558
+	// for the documentation about the tasks.json format
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build auto_graph",
+			"type": "shell",
+			"linux":{"options": {"cwd": "${workspaceFolder}/auto_graph"}},
+			"command": "python3.12 setup.py build_ext --inplace"
+		}
+	]
+}
