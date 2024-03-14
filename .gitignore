@@ -1,6 +1,0 @@
-build
-dist
-*.json
-vc140.pdb
-*.egg-info
-testenv
